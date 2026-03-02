@@ -118,9 +118,7 @@ let pointer_param_generat self x y l =
   in
   check_type y.lv_type x.vtype;
   term
-(**
-   Generation of behaviour clauses for the pure function involved in the relational propertie
-*)
+(* Generation of behaviour clauses for the pure function involved in the relational propertie *)
 let generat_behavior_pure l self logic_info_pure =
   let name_behavior =
     String.concat "_" ["Relational_behavior";
@@ -182,8 +180,8 @@ let generat_behavior_pure l self logic_info_pure =
     logic_info_pure.predicate_info_pure
 
 let make_result kf sub l =
-  match Kernel_function.get_return_type kf, sub with
-  | TVoid(_), [] -> []
+  match (Kernel_function.get_return_type kf).tnode, sub with
+  | TVoid, [] -> []
   | _ , [y]->
     begin
       let t =
@@ -295,7 +293,7 @@ let generat_behavior_for_kf l self logic_info (target_kf,replace_target) global_
             map_extend (fun x y ->
                 match  Cil_datatype.Varinfo.Map.find x from_map with
                 | exception Not_found -> assert false
-                | {lv_origin = Some x} -> param_generat self x y l Pre
+                | {lv_origin = Some x; _} -> param_generat self x y l Pre
                 | _ -> assert false
               ) froms sub
           in
@@ -303,7 +301,7 @@ let generat_behavior_for_kf l self logic_info (target_kf,replace_target) global_
             map_extend (fun x y->
                 match  Cil_datatype.Varinfo.Map.find x assert_map with
                 | exception Not_found -> assert false
-                | {lv_origin = Some x} -> param_generat self x y l Post
+                | {lv_origin = Some x; _} -> param_generat self x y l Post
                 | _ -> assert false
               ) assigns sub
           in
@@ -314,10 +312,10 @@ let generat_behavior_for_kf l self logic_info (target_kf,replace_target) global_
                   begin
                     match  Cil_datatype.Varinfo.Map.find x assert_p_map with
                     | exception Not_found -> assert false
-                    | {lv_origin = Some x} -> pointer_param_generat self x y l
+                    | {lv_origin = Some x; _} -> pointer_param_generat self x y l
                     | _ -> assert false
                   end
-                | {lv_origin = Some x} -> pointer_param_generat self x y l
+                | {lv_origin = Some x; _} -> pointer_param_generat self x y l
                 | _ -> assert false
               ) pointers sub
           in

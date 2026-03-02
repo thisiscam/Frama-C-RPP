@@ -22,14 +22,14 @@ open Filecheck
 open Cil_types
 
 let fun_type_param p =
-  match p.vtype with
-  | TFun (_,Some t,_,_) -> t
-  | TFun (_,None,_,_) ->  []
+  match p.vtype.tnode with
+  | TFun (_,Some t,_) -> t
+  | TFun (_,None,_) ->  []
   | _ -> assert false;;
 
 let fun_type_return p =
-  match p.vtype with
-  | TFun (t,_,_,_) -> t
+  match p.vtype.tnode with
+  | TFun (t,_,_) -> t
   | _ -> assert false;;
 
 let id_checker identifier loc id_hash =
@@ -42,7 +42,7 @@ let id_checker identifier loc id_hash =
       | _ -> ())
   |  _ -> ()
 
-let id_update identifier loc id_hash  =
+let _id_update identifier loc id_hash  =
   match identifier with
   | FormalLabel(s) ->
     (match Str.bounded_split (Str.regexp "_") s 2 with
@@ -73,7 +73,7 @@ let check_param_type param funct loc=
             (Printer.pp_logic_type)  x.term_type
             (Printer.pp_typ) t (Printer.pp_term) x (funct.vname)
       | Linteger ->
-        begin match t with
+        begin match t.tnode with
           | TInt _ -> ()
           | _ -> Rpp_options.Self.fatal ~source: loc
                    "Cast are not supported:@. @[%a and %a are not compatible@] \
@@ -82,7 +82,7 @@ let check_param_type param funct loc=
                    Printer.pp_term x (funct.vname)
         end
       | Lreal ->
-        begin match t with
+        begin match t.tnode with
           | TFloat _ -> ()
           | _ -> Rpp_options.Self.fatal ~source: loc
                    "Cast are not supported:@. @[%a and %a are not compatible@] \
@@ -108,16 +108,16 @@ let rpp_extend_checker check =
       method! vterm t =
         let (loc,_) = t.term_loc in
         match t.term_node with
-        | Tapp({l_var_info={lv_name ="\\callpure"}},[],terms) ->
+        | Tapp({l_var_info={lv_name ="\\callpure"; _}; _},[],terms) ->
           begin
             match terms with
-            | {term_node = TConst (Integer(_,_))} :: q ->
+            | {term_node = TConst (Integer(_,_)); _} :: q ->
               begin
                 match q with
-                | {term_node=TLval(TVar({lv_origin=Some(x)}),TNoOffset)} :: p ->
+                | {term_node=TLval(TVar({lv_origin=Some(x); _}),TNoOffset); _} :: p ->
                   begin
                     match x with
-                    | {vtype=TFun(_)} ->
+                    | {vtype={tnode=TFun _; _}; _} ->
                       check_param_type p x loc;
                       if Cil_datatype.Logic_type.equal (t.term_type) (Ctype(fun_type_return x)) then ()
                       else
@@ -143,22 +143,22 @@ let rpp_extend_checker check =
                       (Printer.pp_term) t
           end
 
-        | Tapp({l_var_info={lv_name ="\\call"}},[],terms) ->
+        | Tapp({l_var_info={lv_name ="\\call"; _}; _},[],terms) ->
           begin
           match terms with
-           |{term_node =TConst(LStr(s))} :: k ->
+           |{term_node =TConst(LStr(s)); _} :: k ->
              begin
              match  Hashtbl.find id_hash s with
               | exception Not_found ->
                 begin
                   match k with
-                 | {term_node = TConst (Integer(_,_))} :: q ->
+                 | {term_node = TConst (Integer(_,_)); _} :: q ->
                    begin
                      match q with
-                     | {term_node=TLval(TVar({lv_origin=Some(x)}),TNoOffset)} :: p ->
+                     | {term_node=TLval(TVar({lv_origin=Some(x); _}),TNoOffset); _} :: p ->
                        begin
                          match x with
-                         | {vtype=TFun(_)} ->
+                         | {vtype={tnode=TFun _; _}; _} ->
                           check_param_type p x loc;
                           Hashtbl.add id_hash s x;
                           Cil.DoChildren
@@ -182,7 +182,7 @@ let rpp_extend_checker check =
                     (Printer.pp_term) t
           end
 
-        | Tapp({l_var_info={lv_name ="\\callresult"}},[],terms) ->
+        | Tapp({l_var_info={lv_name ="\\callresult"; _}; _},[],terms) ->
           if (List.length terms) <> 1 then
             Rpp_options.Self.fatal ~source:loc
               "\\callresult contain more then one parameter:@. @[%a@] @."
@@ -212,13 +212,13 @@ let rpp_extend_checker check =
             end;
             Cil.SkipChildren
 
-        | Tapp ({l_var_info={lv_name ="\\callpure"}},_::_, _) ->
+        | Tapp ({l_var_info={lv_name ="\\callpure"; _}; _},_::_, _) ->
           Rpp_options.Self.fatal ~source:loc "Expect no label for built-in \\callpure:@. @[%a@]"
             Printer.pp_term t
-        | Tapp ({l_var_info={lv_name ="\\callresult"}}, _::_, _) ->
+        | Tapp ({l_var_info={lv_name ="\\callresult"; _}; _}, _::_, _) ->
           Rpp_options.Self.fatal ~source:loc "Expect no label for built-in \\callresult:@. @[%a@]"
             Printer.pp_term t
-        | Tapp ({l_var_info={lv_name ="\\call"}}, _::_, _) ->
+        | Tapp ({l_var_info={lv_name ="\\call"; _}; _}, _::_, _) ->
           Rpp_options.Self.fatal ~source:loc "Expect no label for built-in \\callresult:@. @[%a@]"
             Printer.pp_term t
         | Tat(v,l)->
@@ -229,12 +229,12 @@ let rpp_extend_checker check =
       method! vpredicate p =
         let (loc,_) = p.pred_loc in
         match p.pred_content with
-        | Papp({l_var_info={lv_name ="\\callset"}},[],terms) ->
+        | Papp({l_var_info={lv_name ="\\callset"; _}; _},[],terms) ->
           Hashtbl.clear id_hash;
           List.iter
             (fun x ->
                match x.term_node with
-               | Tapp({l_var_info={lv_name ="\\call"}},_,_)->
+               | Tapp({l_var_info={lv_name ="\\call"; _}; _},_,_)->
                  let _ = self#vterm x in ()
                | _ -> Rpp_options.Self.fatal ~source:loc
                         "\\callset contain no \\call: @. @[%a@] @." Printer.pp_term x

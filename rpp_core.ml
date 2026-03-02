@@ -177,7 +177,7 @@ class generation_of_prouve_system prj = object (self)
 
   method! vannotation = function
     | Dextended
-        ({ext_name = "relational"; ext_kind = Ext_preds p; ext_loc},_,_) ->
+        ({ext_name = "relational"; ext_kind = Ext_preds p; ext_loc; _},_,_) ->
       let new_globs =
         begin
           match Rpp_options.Enable_only_hyp.get (),
@@ -201,7 +201,7 @@ class generation_of_prouve_system prj = object (self)
     | _ -> JustCopy
 
   method! vglob_aux = function
-    | GAnnot (Dextended ({ ext_name = "relational"},_,_), _) ->
+    | GAnnot (Dextended ({ ext_name = "relational"; _},_,_), _) ->
       DoChildrenPost (fun _ -> []) (* once treated, remove the clause. *)
     | _ -> DoChildren
 
@@ -215,7 +215,7 @@ class generation_of_prouve_system prj = object (self)
       | [] ->
         relataional_clause_list := l;
         []
-      | { ext_name = "relational"; ext_kind = Ext_preds(predicate)} :: q ->
+      | { ext_name = "relational"; ext_kind = Ext_preds(predicate); _} :: q ->
         aux q (predicate :: l)
       | h :: q ->
         h :: aux q l

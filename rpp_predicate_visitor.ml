@@ -25,21 +25,23 @@ open Rpp_types
    Function returning the type refering to the new project
 *)
 let rec get_typ_in_current_project t self loc=
-  match t with
-  | TVoid(_) -> t
+  match t.tnode with
+  | TVoid -> t
   | TInt(_) -> t
   | TFloat(_) -> t
-  | TPtr(t,a) ->
-    let new_t = get_typ_in_current_project t self loc in TPtr(new_t,a)
-  | TArray(t,e,b,a) ->
-    let new_t = get_typ_in_current_project t self loc in TArray(new_t,e,b,a)
+  | TPtr(inner_t) ->
+    let new_t = get_typ_in_current_project inner_t self loc in
+    { t with tnode = TPtr(new_t) }
+  | TArray(inner_t,e) ->
+    let new_t = get_typ_in_current_project inner_t self loc in
+    { t with tnode = TArray(new_t,e) }
   | TFun(_) ->
     Rpp_options.Self.abort ~source:(fst loc)
                   "Error in predicate: Function types are not supported yet"
-  | TNamed (t,a) -> let new_c = Visitor_behavior.Get.typeinfo self t in TNamed(new_c,a)
-  | TComp (c,b,a) ->let new_c = Visitor_behavior.Get.compinfo self c in TComp(new_c,b,a)
-  | TEnum (e,a) -> let new_e = Visitor_behavior.Get.enuminfo self e in TEnum(new_e,a)
-  | TBuiltin_va_list(_) -> t
+  | TNamed (ti) -> let new_c = Visitor_behavior.Get.typeinfo self ti in { t with tnode = TNamed(new_c) }
+  | TComp (c) -> let new_c = Visitor_behavior.Get.compinfo self c in { t with tnode = TComp(new_c) }
+  | TEnum (e) -> let new_e = Visitor_behavior.Get.enuminfo self e in { t with tnode = TEnum(new_e) }
+  | TBuiltin_va_list -> t
 
 let sorter l =
   List.fold_right (fun (x,y) (l1, l2) -> (x::l1, y::l2)) l ([],[])
@@ -79,6 +81,7 @@ let make_stmt_from_exp exp loc =
       let return_lval =
         (Var(varinfo),NoOffset)
       in
+      let e = Cil.mkCast ~force:false ~newt:varinfo.vtype e in
       let new_stmt =
         Cil.mkStmt ~valid_sid:true (Instr(Set(return_lval,e,loc)))
       in
@@ -90,8 +93,8 @@ let make_stmt_from_exp exp loc =
    Function returning the type return by a function
 *)
 let function_return_type funct =
-  match funct.vtype with
-  | TFun(t,_,_,_) -> get_typ_in_current_project t
+  match funct.vtype.tnode with
+  | TFun(t,_,_) -> get_typ_in_current_project t
   | _ -> assert false
 
 (**
@@ -142,9 +145,9 @@ let check_function_side_effect funct loc =
       begin
         match h.term_node with
         | TLval(TMem({term_node =
-                        TBinOp(IndexPI,{term_node = TLval(TVar(l_v),TNoOffset)},
-                               {term_node = Trange(_,_)})}),TNoOffset)
-        | TLval(TMem({term_node = TLval(TVar(l_v),TNoOffset)}),TNoOffset) ->
+                        TBinOp(PlusPI,{term_node = TLval(TVar(l_v),TNoOffset); _},
+                               {term_node = Trange(_,_); _}); _}),TNoOffset)
+        | TLval(TMem({term_node = TLval(TVar(l_v),TNoOffset); _}),TNoOffset) ->
           begin
             match l_v.lv_origin with
             | Some v ->
@@ -168,12 +171,12 @@ let check_function_side_effect funct loc =
   let rec check_pointer l =
     match l with
     | [] -> ()
-    | {term_node = TLval(TMem({term_node = TLval(TVar(_),TNoOffset)}),TNoOffset)} :: q ->
+    | {term_node = TLval(TMem({term_node = TLval(TVar(_),TNoOffset); _}),TNoOffset); _} :: q ->
       check_pointer q
     | {term_node =
          TLval(TMem({term_node =
-                       TBinOp(IndexPI,{term_node = TLval(TVar(_),TNoOffset)},
-                              {term_node = Trange(_,_)})}),TNoOffset)} :: q ->
+                       TBinOp(PlusPI,{term_node = TLval(TVar(_),TNoOffset); _},
+                              {term_node = Trange(_,_); _}); _}),TNoOffset); _} :: q ->
       check_pointer q
     | _ ->
       Rpp_options.Self.abort ~source:(fst loc)
@@ -248,7 +251,7 @@ let check_function_side_effect funct loc =
       get_assigns_form y data
     | [] -> acc
   in
-  let behaviours = Annotations.behaviors ~populate:false kf in
+  let behaviours = Annotations.behaviors kf in
   begin
     match behaviours with
     | [] ->
@@ -353,14 +356,14 @@ let rec clone_killer l1 acc f=
     else clone_killer q (h :: acc) f
 
 let typer func env formals =
-  let args = match func.vtype with
-    | TFun (_,l,_,_) ->  Cil.argsToList l
+  let args = match func.vtype.tnode with
+    | TFun (_,l,_) ->  Cil.argsToList l
     | _ -> assert false
   in
   List.fold_left2(fun (fq,eq) fh (_,t,_)->
       match fh.term_node with
       | TLval (TVar(l_v),TNoOffset)
-      | TLval (TMem({term_node = TLval (TVar(l_v),TNoOffset)}),TNoOffset) ->
+      | TLval (TMem({term_node = TLval (TVar(l_v),TNoOffset); _}),TNoOffset) ->
         begin
           match l_v.lv_origin with
           | Some x -> (x::fq,None::eq)
@@ -375,10 +378,10 @@ let typer func env formals =
           String.concat "_" ["aux_local_variable";
                              string_of_int (Rpp_options.Counting_aux_local_variable.next())]
         in
-        let term_type = match fh.term_type, t with
+        let term_type = match fh.term_type, t.tnode with
           | Ctype t ,_-> t
           | Linteger, TInt(_) -> t
-          | Linteger, TNamed({ttype = TInt _},_) ->
+          | Linteger, TNamed({ttype = {tnode = TInt _; _}; _}) ->
             get_typ_in_current_project t env.self#behavior env.loc
           | Lreal ,TInt(_) | Lreal , TFloat(_) -> t
           | _,_ ->  Rpp_options.Self.fatal ~source:(fst env.loc)
@@ -390,8 +393,7 @@ let typer func env formals =
         let assert_varinfo =
           Cil.makeLocalVar env.new_funct name term_type
         in
-        let term_to_exp = !(Db.Properties.Interp.term_to_exp) in
-        let exp = term_to_exp ~result:None fh in
+        let exp = Logic_to_c.term_to_exp fh in
         (assert_varinfo::fq,Some(exp,assert_varinfo,fh)::eq))
     ([],[]) formals args
 
@@ -502,7 +504,7 @@ let make_separate env inline_info call_side_effect_data=
       let separated_terms = aux1 separated_terms in
       let make_separated separated_terms =
         let predicate_name =
-          Logic_const.unamed (Pseparated(separated_terms))
+          Logic_const.unnamed (Pseparated(separated_terms))
         in
         let requires =
           Logic_const.new_predicate predicate_name
@@ -524,7 +526,7 @@ class separate_checker loc terms id = object(_)
 
   method! vterm t =
     match t.term_type with
-    | Ctype(TPtr _) ->
+    | Ctype({tnode = TPtr _; _}) ->
       List.iter (fun x ->
           match Cil_datatype.Term.equal x t with
           | true ->
@@ -655,7 +657,7 @@ let predicate_visitor
       in
       let return =
         match func_type_return with
-        |TVoid(_) -> None
+        | {tnode = TVoid; _} -> None
         | x -> Some (Cil.makeLocalVar (env.new_funct) name x)
       in
       (*Génération des pointer globales*)
@@ -943,7 +945,7 @@ let predicate_visitor
       let new_term_assert =
         Logic_const.term
           ~loc:env.loc
-          (TLogic_coerce(new_ty,term_assert))
+          (TCast(true, new_ty, term_assert))
           (new_typ)
       in
       new_term_assert
@@ -967,10 +969,10 @@ let predicate_visitor
           self#build_Toffset env field_offset
         in
         TField(new_field_info,new_field_offset)
-      | TModel(_,_) -> (** access to a model field. *)
+      | TModel(_,_) -> (* access to a model field. *)
         Rpp_options.Self.abort ~source:(fst env.loc)
           "Error in pedicate: access to a model field are not supported"
-      (** index. Note that a range is denoted by [TIndex(Trange(i1,i2),ofs)] *)
+      (* index. Note that a range is denoted by [TIndex(Trange(i1,i2),ofs)] *)
       | TIndex(term_index,index_offset) ->
         let new_term_index =
           self#visit_term env term_index
@@ -1201,9 +1203,9 @@ let predicate_visitor
     method  build_predicate_rel env rel t1_assert t2_assert =
       Logic_const.prel ~loc:env.loc(rel,t1_assert,t2_assert)
 
-    method  build_predicate_false env = Logic_const.unamed ~loc:env.loc Pfalse
+    method  build_predicate_false env = Logic_const.unnamed ~loc:env.loc Pfalse
 
-    method  build_predicate_true env = Logic_const.unamed ~loc:env.loc Ptrue
+    method  build_predicate_true env = Logic_const.unnamed ~loc:env.loc Ptrue
 
     method  build_predicate_and env pred1_assert pred2_assert =
       Logic_const.pand ~loc:env.loc (pred1_assert, pred2_assert)
@@ -1281,6 +1283,11 @@ let predicate_visitor
             Rpp_options.Self.abort ~source:(fst env.loc)
               "@[<v 2>Error in predicate: \
                Logic function types in quantifier are not supported:@;%a@]"
+              Printer.pp_logic_var x
+          | Lboolean ->
+            Rpp_options.Self.abort ~source:(fst env.loc)
+              "@[<v 2>Error in predicate: \
+               Boolean logic types in quantifier are not supported:@;%a@]"
               Printer.pp_logic_var x)
         quan ;
       quan
@@ -1345,7 +1352,11 @@ let predicate_visitor
           | Larrow _ ->
             Rpp_options.Self.abort ~source:(fst env.loc)
               "Error in predicate: A C function cannot \
-               have a logic function type as parameter")
+               have a logic function type as parameter"
+          | Lboolean ->
+            Rpp_options.Self.abort ~source:(fst env.loc)
+              "Error in predicate: A C function cannot \
+               have a boolean logic type as parameter")
         quan ;
 
     method build_rpp_predicate_forall env _ new_assert_predicate =

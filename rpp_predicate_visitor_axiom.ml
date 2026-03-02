@@ -87,7 +87,7 @@ let rec make_unique_name ?(acc:int = 0) n formals =
 
 let typer self loc l env func =
   let args = match func.vtype with
-    | TFun (_,l,_,_) ->  Cil.argsToList l
+    | {tnode = TFun (_,l,_); _} -> Cil.argsToList l
     | _ -> assert false
   in
   List.map2(
@@ -97,10 +97,10 @@ let typer self loc l env func =
       in
       match th.term_type,new_t with
       | Ctype(t1) ,t2 when Cil_datatype.Typ.equal t1 t2 -> th
-      | Ctype(_) ,_  | Linteger , TInt(_)
-      | Linteger, TNamed({ttype = TInt _},_)
-      | Lreal , TInt(_) | Lreal , TFloat(_) ->
-        Logic_const.term ~loc:env.loc_axiom (TCastE(new_t,th)) (Ctype new_t)
+      | Ctype(_) ,_  | Linteger , {tnode = TInt(_); _}
+      | Linteger, {tnode = TNamed({ttype = {tnode = TInt _; _}; _}); _}
+      | Lreal , {tnode = TInt(_); _} | Lreal , {tnode = TFloat(_); _} ->
+        Logic_const.term ~loc:env.loc_axiom (TCast(false, Ctype new_t, th)) (Ctype new_t)
       | _ , _->
         Rpp_options.Self.fatal ~source:(fst env.loc_axiom)
           "@[<v 2>Something went wrong :\
@@ -216,7 +216,7 @@ let make_logic_information env name kf type_return data pointers predicate_info 
   let return_param_name = "return_variable_relational" in
   let param_return =
     match type_return with
-    | TVoid _ -> []
+    | {tnode = TVoid; _} -> []
     | x ->
       let type_return =
         Rpp_predicate_visitor.get_typ_in_current_project
@@ -421,7 +421,7 @@ let predicate_visitor predicate self_behavior =
       in
       let logic_var_axiome =
         match func_type_return with
-        | TVoid(_) -> None
+        | {tnode = TVoid; _} -> None
         | x ->
           let new_type =
             Rpp_predicate_visitor.get_typ_in_current_project
@@ -556,7 +556,7 @@ let predicate_visitor predicate self_behavior =
                (Globals.Functions.get_params current_kf);
            let return = Kernel_function.get_return_type current_kf in
            let typ = match return  with
-             | TVoid _ ->
+             | {tnode = TVoid; _} ->
                Rpp_options.Self.fatal ~source:(fst env.loc_axiom)
                  "Function %s have a unsupported return type void"
                  (funct.vname)
@@ -719,7 +719,7 @@ let predicate_visitor predicate self_behavior =
             "Match bad term type in logic coerce"
       in
       Logic_const.term
-        ~loc:env.loc_axiom (TLogic_coerce(new_ty,term_axiome)) new_typ
+        ~loc:env.loc_axiom (TCast(true, new_ty, term_axiome)) new_typ
 
     method  build_term_const env logic_const _ =
       match logic_const with
@@ -743,10 +743,10 @@ let predicate_visitor predicate self_behavior =
           self#build_Toffset env field_offset
         in
         TField(new_field_info,new_field_offset)
-      | TModel(_,_) -> (** access to a model field. *)
+      | TModel(_,_) -> (* access to a model field. *)
         Rpp_options.Self.abort ~source:(fst env.loc_axiom)
           "Error in predicate: accesses to model fields are not supported"
-      (** index. Note that a range is denoted by [TIndex(Trange(i1,i2),ofs)] *)
+      (* index. Note that a range is denoted by [TIndex(Trange(i1,i2),ofs)] *)
       | TIndex(term_index,index_offset) ->
         let new_term_index =
           self#visit_term env term_index
@@ -959,10 +959,10 @@ let predicate_visitor predicate self_behavior =
       Logic_const.prel ~loc:env.loc_axiom (rel,t1_axiom, t2_axiom)
 
     method  build_predicate_false env =
-      Logic_const.unamed ~loc:env.loc_axiom Pfalse
+      Logic_const.unnamed ~loc:env.loc_axiom Pfalse
 
     method  build_predicate_true env =
-      Logic_const.unamed ~loc:env.loc_axiom Ptrue
+      Logic_const.unnamed ~loc:env.loc_axiom Ptrue
 
     method  build_predicate_and env pred1_axiome pred2_axiome =
       Logic_const.pand ~loc:env.loc_axiom (pred1_axiome,pred2_axiome)
@@ -1044,6 +1044,11 @@ let predicate_visitor predicate self_behavior =
             Rpp_options.Self.abort ~source:(fst env.loc_axiom)
               "@[<v 2>Error in predicate: A C function cannot have \
                a logic function type as parameter:@;%a@]"
+              Printer.pp_logic_var x
+          | Lboolean ->
+            Rpp_options.Self.abort ~source:(fst env.loc_axiom)
+              "@[<v 2>Error in predicate: A C function cannot have \
+               a boolean logic type as parameter:@;%a@]"
               Printer.pp_logic_var x)
         quan;
       quan
@@ -1106,7 +1111,11 @@ let predicate_visitor predicate self_behavior =
           | Larrow _ ->
             Rpp_options.Self.abort ~source:(fst env.loc_axiom)
               "Error in predicate: A C function cannot have \
-               a logic function type as parameter")
+               a logic function type as parameter"
+          | Lboolean ->
+            Rpp_options.Self.abort ~source:(fst env.loc_axiom)
+              "Error in predicate: A C function cannot have \
+               a boolean logic type as parameter")
         quan ;
       List.map
         (fun x ->
@@ -1139,7 +1148,7 @@ let predicate_visitor predicate self_behavior =
       let new_pred_axiom =
         List.fold_left
           (fun acc predicate_axiom ->
-             Logic_const.(pimplies ~loc (unamed ~loc predicate_axiom, acc)))
+             Logic_const.(pimplies ~loc (unnamed ~loc predicate_axiom, acc)))
           new_axiome_predicate (new_pred_axiom @ sep_pred)
       in
       let new_axiome_predicate =
@@ -1160,7 +1169,7 @@ let predicate_visitor predicate self_behavior =
       let new_pred_axiom =
         List.fold_left
           (fun acc predicate_axiom ->
-             Logic_const.(pimplies ~loc (unamed ~loc predicate_axiom,acc)))
+             Logic_const.(pimplies ~loc (unnamed ~loc predicate_axiom,acc)))
           new_axiome_predicate (new_pred_axiom @ sep_pred)
       in
       let predicate = Logic_const.pforall ~loc (new_quant,new_pred_axiom) in

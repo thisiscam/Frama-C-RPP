@@ -33,13 +33,13 @@ other properties in a completely automatic and transparent way.
 
 ## Installation
 
-*RPP v0.0.1* requires [Frama-C v24.0 Chromium](https://frama-c.com/fc-versions/chromium.html).
+*RPP* requires [Frama-C v32.0 Germanium](https://frama-c.com/fc-versions/germanium.html).
 For more information see [Frama-C](http://frama-c.com).
 
 For installation, run following commands in the *RPP* directory:
 
-        make
-        make install
+        dune build
+        dune install
 
 ## Usage
 

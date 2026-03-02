@@ -59,16 +59,20 @@ let type_relational typing_context loc l =
           (test#logic_type None)  x.term_type (Printer.pp_typ) t
           Printer.pp_term x (pred.vname)
     | Linteger ->
-      begin match t with
+      begin match t.tnode with
         | TInt _ -> ()
-        | TNamed({ttype = TInt _},_) -> ()
+        | TNamed ti -> (match ti.ttype.tnode with TInt _ -> () | _ ->
+          ctxt.error loc  "Cast are not supported:@. @[%a and %a are not compatible@] \
+                                for term @[%a@] in call of %s @."
+                 (Printer.pp_logic_type)  x.term_type (Printer.pp_typ) t
+                 Printer.pp_term x (pred.vname))
         | _ -> ctxt.error loc  "Cast are not supported:@. @[%a and %a are not compatible@] \
                                 for term @[%a@] in call of %s @."
                  (Printer.pp_logic_type)  x.term_type (Printer.pp_typ) t
                  Printer.pp_term x (pred.vname)
       end
     | Lreal ->
-      begin match t with
+      begin match t.tnode with
         | TFloat _ -> ()
         | _ -> ctxt.error loc  "Cast are not supported:@. @[%a and %a are not compatible@] \
                                 for term @[%a@] in call of %s @."
@@ -80,7 +84,7 @@ let type_relational typing_context loc l =
   in
 
   let is_func var ctxt =
-    match var.vtype with
+    match var.vtype.tnode with
     | TFun _ -> var
     | _ -> ctxt.error loc "Expected a C function: @ @[%a@] @." Printer.pp_varinfo var
   in
@@ -113,35 +117,35 @@ let type_relational typing_context loc l =
 
   let check_call_param ctxt env p f =
     match p.lexpr_node with
-    | PLapp ("\\callpure", [], _) ->  ctxt.type_term ctxt env p (** an application. *)
-    | PLvar _ -> typing_context.type_term ctxt env p (** a variable *)
-    | PLarrow _ -> typing_context.type_term ctxt env p (** field access ({t a->x})*)
-    | PLconstant _ -> ctxt.type_term ctxt env p (** a constant. *)
-    | PLbinop _ -> ctxt.type_term ctxt env p (** binary operator. *)
-    | PLdot _ -> ctxt.type_term ctxt env p (** field access ({t a.x}) *)
-    | PLarrget _ -> ctxt.type_term ctxt env p (** array access. *)
-    | PLunop _ -> ctxt.type_term ctxt env p (** unary operator. *)
+    | PLapp ("\\callpure", [], _) ->  ctxt.type_term ctxt env p (* an application. *)
+    | PLvar _ -> typing_context.type_term ctxt env p (* a variable *)
+    | PLarrow _ -> typing_context.type_term ctxt env p (* field access ({t a->x})*)
+    | PLconstant _ -> ctxt.type_term ctxt env p (* a constant. *)
+    | PLbinop _ -> ctxt.type_term ctxt env p (* binary operator. *)
+    | PLdot _ -> ctxt.type_term ctxt env p (* field access ({t a.x}) *)
+    | PLarrget _ -> ctxt.type_term ctxt env p (* array access. *)
+    | PLunop _ -> ctxt.type_term ctxt env p (* unary operator. *)
     | _ -> ctxt.error loc "Unsupported terme@. @[%a@] @.in parameter for function %s @."
              Logic_print.print_lexpr p f
   in
 
   let fun_n_param p =
-    match p.vtype with
-    | TFun (_,Some l,_,_) -> List.length l
-    | TFun (_,None,_,_) -> 0
+    match p.vtype.tnode with
+    | TFun (_, Some l, _) -> List.length l
+    | TFun (_, None, _) -> 0
     | _ -> assert false
   in
 
   let fun_type_return p =
-    match p.vtype with
-    | TFun (t,_,_,_) -> t
+    match p.vtype.tnode with
+    | TFun (t, _, _) -> t
     | _ -> assert false
   in
 
   let fun_type_param p =
-    match p.vtype with
-    | TFun (_,Some t,_,_) -> t
-    | TFun (_,None,_,_) ->  []
+    match p.vtype.tnode with
+    | TFun (_, Some t, _) -> t
+    | TFun (_, None, _) -> []
     | _ -> assert false
   in
 
@@ -162,7 +166,7 @@ let type_relational typing_context loc l =
         let predn = List.map (fun p -> check_call_param ctxt env p (pred.vname)) (List.tl param) in
         List.iter2 (fun x (_,t,_) -> function_parameter_check ctxt x t pred)
           (predn) (fun_type_param pred);
-        let li = List.hd (ctxt.find_all_logic_functions "\\callpure") in
+        let li = List.hd (Logic_env.find_all_logic_functions "\\callpure") in
         li.l_type <- Some(Cil_types.Ctype(fun_type_return pred));
         let inline = Logic_const.tinteger ~loc:pred.vdecl inline in
         let lv_funct = Cil.cvar_to_lvar pred in
@@ -195,7 +199,7 @@ let type_relational typing_context loc l =
              | _ -> assert false
             )
           in
-          let li = List.hd (ctxt.find_all_logic_functions "\\callresult") in
+          let li = List.hd (Logic_env.find_all_logic_functions "\\callresult") in
           li.l_type <- Some(Cil_types.Ctype(fun_type_return f));
           let ti = Logic_const.tstring ~loc:p.lexpr_loc id in
           Logic_const.term ~loc:p.lexpr_loc (Tapp(li,[],[ti])) (Cil_types.Ctype(fun_type_return f)))
@@ -252,7 +256,7 @@ let type_relational typing_context loc l =
           List.iter2 (fun x (_,t,_) -> function_parameter_check ctxt x t pred)
             (predn) (fun_type_param pred);
 
-          let li = List.hd (ctxt.find_all_logic_functions "\\call") in
+          let li = List.hd (Logic_env.find_all_logic_functions "\\call") in
           let inline = Logic_const.tinteger ~loc:pred.vdecl inline in
           let tid = Logic_const.tstring ~loc:pred.vdecl id in
           li.l_type <- Some(Cil_types.Ctype(fun_type_return pred));
@@ -297,7 +301,7 @@ let type_relational typing_context loc l =
              (env, call :: calls))
           param (env, [])
       in
-      let li = List.hd (ctxt.find_all_logic_functions "\\callset") in
+      let li = List.hd (Logic_env.find_all_logic_functions "\\callset") in
       let named_pred =
         {
           pred_name =[];
@@ -339,7 +343,7 @@ let type_relational typing_context loc l =
            Logic_const.pimplies ~loc:p.lexpr_loc (callset, pred)
          )))
 
-    | PLimplies(({lexpr_node = PLapp("\\callset",_,_)} as set),pred) ->
+    | PLimplies(({lexpr_node = PLapp("\\callset",_,_); _} as set),pred) ->
       if not(Rpp_options.Is_buildin_rela_first.get()) then
         ctxt.error loc
           "Expected \\callset built-in to be the first element in predicat \
@@ -371,5 +375,5 @@ let type_relational typing_context loc l =
   | _ -> typing_context.error loc "expecting one predicate in relational clause @."
 
 let () =
-  Acsl_extension.register_global "relational" type_relational true
+  Acsl_extension.register_global ~plugin:"rpp" "relational" type_relational true
   (* Acsl_extension.register_behavior "relational" type_relational true *)

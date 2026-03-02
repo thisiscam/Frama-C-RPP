@@ -23,17 +23,17 @@ open Cil_types
 let check_result_from_formals kf loc af =
   let formals = Globals.Functions.get_params kf in
   match af with
-  | {it_content = {term_node = TLval(TResult(_),_)}}, From(l) ->
+  | {it_content = {term_node = TLval(TResult(_),_); _}; _}, From(l) ->
     List.iter (
       fun x ->
         match x with
         | {it_content =
-             {term_node = TLval(TMem({term_node = TLval(TVar(lv),TNoOffset)}),TNoOffset)} }
+             {term_node = TLval(TMem({term_node = TLval(TVar(lv),TNoOffset); _}),TNoOffset); _}; _}
         | {it_content =
              {term_node = TLval(TMem({term_node =
-                                        TBinOp(IndexPI,{term_node = TLval(TVar(lv),TNoOffset)},
-                                               {term_node = Trange(_,_)})}),TNoOffset)}}
-        | {it_content = {term_node = TLval(TVar(lv),_)}} ->
+                                        TBinOp(PlusPI,{term_node = TLval(TVar(lv),TNoOffset); _},
+                                               {term_node = Trange(_,_); _}); _}),TNoOffset); _}; _}
+        | {it_content = {term_node = TLval(TVar(lv),_); _}; _} ->
           begin
             let is_formal =
               List.exists (fun v ->
@@ -76,7 +76,7 @@ let check_is_pure_function kf loc =
                          (Kernel_function.get_name kf)(Kernel_function.get_name kf))
     | [] -> ()
   in
-  let behaviours = Annotations.behaviors ~populate:false kf in
+  let behaviours = Annotations.behaviors kf in
   aux behaviours
 
 class virtual ['a] rpp_visitor = object (self:'a)
@@ -122,13 +122,13 @@ class virtual ['a] rpp_visitor = object (self:'a)
   method visit_call env term =
     let (loc,_) = term.term_loc in
     match term.term_node with
-    | Tapp({l_var_info={lv_name ="\\callpure"}},[],terms) ->
+    | Tapp({l_var_info={lv_name ="\\callpure"; _}; _},[],terms) ->
       let (inline,funct,formals) =
         (match terms with
-         | {term_node = TConst (Integer(i,_))} :: q -> (match q with
-             | {term_node=TLval(TVar({lv_origin=Some(x)}),TNoOffset)} :: p ->
+         | {term_node = TConst (Integer(i,_)); _} :: q -> (match q with
+             | {term_node=TLval(TVar({lv_origin=Some(x); _}),TNoOffset); _} :: p ->
                (match x with
-                | {vtype=TFun(_)} ->(Integer.to_int i,x,p)
+                | {vtype={tnode=TFun(_); _}; _} ->(Integer.to_int_exn i,x,p)
                 | _ ->
                   Rpp_options.Self.fatal ~source:loc
                     "Something went wrong during parsing: Expected\
@@ -144,7 +144,7 @@ class virtual ['a] rpp_visitor = object (self:'a)
       in
       check_is_pure_function (Globals.Functions.get funct) loc;
       self#visit_call_app env inline funct formals (term.term_type)
-    | Tapp({l_var_info={lv_name ="\\callpure"}},_::_,_) ->
+    | Tapp({l_var_info={lv_name ="\\callpure"; _}; _},_::_,_) ->
       Rpp_options.Self.abort ~source:loc "Something went wrong during parsing:\
                                           Expect no label for built-in \\callpure:@. @[%a@] @."
         Printer.pp_term term
@@ -155,16 +155,16 @@ class virtual ['a] rpp_visitor = object (self:'a)
     | TConst(_) -> Rpp_options.Self.abort ~source:loc
                      "Unsupported logical constant in callpure:@. @[%a@] @."
                      Printer.pp_term term
-    | TBinOp((PlusA|PlusPI|IndexPI|MinusA|Mult|Div|Mod|Lt|Gt|Le|Ge|Eq|Ne|BAnd|BXor|BOr as binop),
+    | TBinOp((PlusA|PlusPI|MinusA|Mult|Div|Mod|Lt|Gt|Le|Ge|Eq|Ne|BAnd|BXor|BOr as binop),
              t1,t2) ->
       self#visit_call_binop env binop t1 t2 (term.term_type)
     | TBinOp(_,_,_)-> Rpp_options.Self.abort ~source:loc
                         "Unsupported binary operation:@. @[%a@] @."
                         Printer.pp_term term
-    | TLogic_coerce ((Ctype _) as ty,termi)  |TLogic_coerce (Linteger as ty,termi)
-    | TLogic_coerce (Lreal as ty,termi)->
+    | TCast (true, ((Ctype _) as ty), termi) | TCast (true, (Linteger as ty), termi)
+    | TCast (true, (Lreal as ty), termi) ->
       self#visit_call_logic_coerce env ty termi (term.term_type)
-    | TLogic_coerce (ty,termi) ->
+    | TCast (true, ty, termi) ->
       Rpp_options.Self.abort ~source:loc "Unsupported logical convertion from %a to %a:@. @[%a@] @."
         Printer.pp_logic_type (termi.term_type)
         Printer.pp_logic_type ty  Printer.pp_term term
@@ -204,7 +204,7 @@ class virtual ['a] rpp_visitor = object (self:'a)
   method visit_term_at env term label =
     let (loc,_) = term.term_loc in
     match term.term_node with
-    | TBinOp((PlusA|PlusPI|IndexPI|MinusA|Mult|Div|Mod|Lt|Gt|Le|Ge|Eq|Ne|BAnd|BXor|BOr as operator),
+    | TBinOp((PlusA|PlusPI|MinusA|Mult|Div|Mod|Lt|Gt|Le|Ge|Eq|Ne|BAnd|BXor|BOr as operator),
              term1,term2) ->
       self#visit_term_binop_at env operator term1 term2 (term.term_type) label
     | TBinOp(_,_,_)-> Rpp_options.Self.abort ~source:loc
@@ -216,8 +216,8 @@ class virtual ['a] rpp_visitor = object (self:'a)
       self#visit_term_const_at env l_g (term.term_type) label
     | TConst(_) -> Rpp_options.Self.abort ~source:loc "Unsupported logical constant:@. @[%a@] @."
                      Printer.pp_term term
-    | TLogic_coerce ((Ctype _) as ty,termi)  |TLogic_coerce (Linteger as ty,termi)
-    | TLogic_coerce (Lreal as ty,termi)->
+    | TCast (true, ((Ctype _) as ty), termi) | TCast (true, (Linteger as ty), termi)
+    | TCast (true, (Lreal as ty), termi) ->
       self#visit_term_logic_coerce_at env ty termi (term.term_type) label
     | _ ->  Rpp_options.Self.abort ~source:loc " Not supported term in at term:@. @[%a@] @."
               Printer.pp_term term
@@ -288,13 +288,13 @@ class virtual ['a] rpp_visitor = object (self:'a)
   method visit_term env term =
     let (loc,_) = term.term_loc in
     match term.term_node with
-    | Tapp({l_var_info={lv_name ="\\callpure"}},[],terms) ->
+    | Tapp({l_var_info={lv_name ="\\callpure"; _}; _},[],terms) ->
       let (inline,funct,formals) =
         (match terms with
-         | {term_node = TConst (Integer(i,_))} :: q -> (match q with
-             | {term_node=TLval(TVar({lv_origin=Some(x)}),TNoOffset)} :: p ->
+         | {term_node = TConst (Integer(i,_)); _} :: q -> (match q with
+             | {term_node=TLval(TVar({lv_origin=Some(x); _}),TNoOffset); _} :: p ->
                (match x with
-                | {vtype=TFun(_)} ->(Integer.to_int i,x,p)
+                | {vtype={tnode=TFun(_); _}; _} ->(Integer.to_int_exn i,x,p)
                 | _ ->
                   Rpp_options.Self.fatal ~source:loc
                     "Something went wrong during parsing: Expected\
@@ -310,21 +310,21 @@ class virtual ['a] rpp_visitor = object (self:'a)
       in
       check_is_pure_function (Globals.Functions.get funct) loc;
       self#visit_term_app_call env inline funct formals (term.term_type)
-    | Tapp({l_var_info={lv_name ="\\callpure"}},_::_,_) ->
+    | Tapp({l_var_info={lv_name ="\\callpure"; _}; _},_::_,_) ->
       let (loc,_) = term.term_loc in
       Rpp_options.Self.fatal ~source:loc "Something went wrong during parsing:\
                                           Expect no label for built-in \\callpure:@. @[%a@] @."
         Printer.pp_term term
-    | TBinOp((PlusA|PlusPI|IndexPI|MinusA|Mult|Div|Mod|Lt|Gt|Le|Ge|Eq|Ne|BAnd|BXor|BOr as operator),
+    | TBinOp((PlusA|PlusPI|MinusA|Mult|Div|Mod|Lt|Gt|Le|Ge|Eq|Ne|BAnd|BXor|BOr as operator),
              term1,term2) ->
       self#visit_term_binop env operator term1 term2 (term.term_type)
     | TBinOp(_,_,_)-> Rpp_options.Self.abort ~source:loc
                         "Unsupported binary operation:@. @[%a@] @."
                         Printer.pp_term term
-    | TLogic_coerce ((Ctype _) as ty,termi)  |TLogic_coerce (Linteger as ty,termi)
-    | TLogic_coerce (Lreal as ty,termi)->
+    | TCast (true, ((Ctype _) as ty), termi) | TCast (true, (Linteger as ty), termi)
+    | TCast (true, (Lreal as ty), termi) ->
       self#visit_term_logic_coerce env ty termi (term.term_type)
-    | TLogic_coerce (ty,termi) ->
+    | TCast (true, ty, termi) ->
       Rpp_options.Self.abort ~source:loc "Unsupported logical convertion from %a to %a:@. @[%a@] @."
         Printer.pp_logic_type (termi.term_type)
         Printer.pp_logic_type ty  Printer.pp_term term
@@ -334,24 +334,24 @@ class virtual ['a] rpp_visitor = object (self:'a)
                      Printer.pp_term term
     | TLval (TVar(logic_var),t_o) ->
       self#visit_term_valvar env logic_var t_o (term.term_type)
-    | Tapp({l_var_info={lv_name ="\\callresult"}},[],{term_node = TConst (LStr(id))} :: []) ->
+    | Tapp({l_var_info={lv_name ="\\callresult"; _}; _},[],{term_node = TConst (LStr(id)); _} :: []) ->
       self#visit_term_app_result env id (term.term_type)
-    | Tapp({l_var_info={lv_name ="\\callresult"}},_, _::_) ->
+    | Tapp({l_var_info={lv_name ="\\callresult"; _}; _},_, _::_) ->
       Rpp_options.Self.fatal ~source:loc "Something went wrong during parsing:\
                                           Expect one existing indentifier for \
                                           built-in \\callresult:@. @[%a@] @."
         Printer.pp_term term
 
-    | Tapp({l_var_info={lv_name ="\\callresult"}},_::_,_) ->
+    | Tapp({l_var_info={lv_name ="\\callresult"; _}; _},_::_,_) ->
       Rpp_options.Self.fatal ~source:loc "Something went wrong during parsing:\
                                           Expect no label for built-in \\callresult:@. @[%a@] @."
               Printer.pp_term term
 
     | Tapp (logicinfo,_,t_list) ->
       self#visit_term_app env logicinfo t_list (term.term_type)
-    | Tat({term_node = TLval(TVar(l_v),x)},FormalLabel(s)) ->
+    | Tat({term_node = TLval(TVar(l_v),x); _},FormalLabel(s)) ->
       self#visit_term_at_val env l_v x s (term.term_type)
-    | Tat({term_node = TLval(TMem(t),TNoOffset)},FormalLabel(s)) ->
+    | Tat({term_node = TLval(TMem(t),TNoOffset); _},FormalLabel(s)) ->
       self#visit_term_at_mem env t s (term.term_type)
     | TUnOp(Neg as op,t) ->
       self#visit_term_unop env op t (term.term_type)
@@ -472,15 +472,15 @@ class virtual ['a] rpp_visitor = object (self:'a)
   method visit_call_term env call_term =
     let (loc,_) = call_term.term_loc in
     match call_term.term_node with
-    | Tapp({l_var_info={lv_name ="\\call"}},[],terms)->
+    | Tapp({l_var_info={lv_name ="\\call"; _}; _},[],terms)->
       let (id,inline,funct,formals) =
         (match terms with
-         |{term_node =TConst(LStr(s))} :: k ->
+         |{term_node =TConst(LStr(s)); _} :: k ->
            (match k with
-            | {term_node = TConst (Integer(i,_))} :: q -> (match q with
-                | {term_node=TLval(TVar({lv_origin=Some(x)}),TNoOffset)} :: p ->
+            | {term_node = TConst (Integer(i,_)); _} :: q -> (match q with
+                | {term_node=TLval(TVar({lv_origin=Some(x); _}),TNoOffset); _} :: p ->
                   (match x with
-                   | {vtype=TFun(_)} ->(s,Integer.to_int i,x,p)
+                   | {vtype={tnode=TFun(_); _}; _} ->(s,Integer.to_int_exn i,x,p)
                    | _ ->
                      Rpp_options.Self.fatal ~source:loc
                        "Something went wrong during parsing: \
@@ -500,7 +500,7 @@ class virtual ['a] rpp_visitor = object (self:'a)
 
       in
       self#visit_calls env id inline funct formals
-    | Tapp({l_var_info = {lv_name = "\\call"}},_::_,_) ->
+    | Tapp({l_var_info = {lv_name = "\\call"; _}; _},_::_,_) ->
       Rpp_options.Self.fatal ~source:loc
         "Something went wrong during parsing:\
          Expected no label for build-in \\call:@. @[%a@] @."
@@ -518,9 +518,9 @@ class virtual ['a] rpp_visitor = object (self:'a)
 
   method visit_callset_predicate env callset =
     match callset.pred_content with
-    | Papp({l_var_info = {lv_name = "\\callset"}},[],calls) ->
+    | Papp({l_var_info = {lv_name = "\\callset"; _}; _},[],calls) ->
       self#visit_callset env calls
-    | Papp({l_var_info = {lv_name = "\\callset"}},_::_,_) ->
+    | Papp({l_var_info = {lv_name = "\\callset"; _}; _},_::_,_) ->
       let (loc,_) = callset.pred_loc in
       Rpp_options.Self.fatal ~source:loc
         "Something went wrong during parsing:\
@@ -567,21 +567,21 @@ class virtual ['a] rpp_visitor = object (self:'a)
   method visit_rpp_predicate env predicate =
     let (loc,_) = predicate.pred_loc in
     match predicate.pred_content with
-    | Pforall(_, ({pred_content = Pimplies(_,{pred_content = Papp({l_var_info = {lv_name = "\\callset"}},_,_)})})) ->
+    | Pforall(_, ({pred_content = Pimplies(_,{pred_content = Papp({l_var_info = {lv_name = "\\callset"; _}; _},_,_); _}); _})) ->
       Rpp_options.Self.fatal ~source:loc
         "Something went wrong during parsing: Expected \\callset built-in\
          to be the first element in predicat or in \\forall:@. @[%a@] @."
         Printer.pp_predicate predicate
 
-    | Pforall(quan, ({pred_content = Pimplies(({pred_content = Papp({l_var_info = {lv_name = "\\callset"}},_,_)} as callset),pred)}))->
+    | Pforall(quan, ({pred_content = Pimplies(({pred_content = Papp({l_var_info = {lv_name = "\\callset"; _}; _},_,_); _} as callset),pred); _}))->
       self#visit_rpp_predicate_forall_callset env quan callset pred
     | Pforall(quan,pred) ->
       self#visit_rpp_predicate_forall env quan pred
     | Prel(rel,t1,t2) ->
       self#visit_rpp_predicate_rel env rel t1 t2
-    | Pimplies(({pred_content = Papp({l_var_info = {lv_name = "\\callset"}},_,_)}as callset),pred)->
+    | Pimplies(({pred_content = Papp({l_var_info = {lv_name = "\\callset"; _}; _},_,_); _} as callset),pred)->
       self#visit_rpp_predicate_implies_callset  env callset pred
-    | Pimplies(_,{pred_content = Papp({l_var_info = {lv_name = "\\callset"}},_,_)})->
+    | Pimplies(_,{pred_content = Papp({l_var_info = {lv_name = "\\callset"; _}; _},_,_); _})->
       Rpp_options.Self.fatal ~source:loc
         "Something went wrong during parsing: Expected \\callset built-in\
          to be the first element in predicat or in \\forall:@. @[%a@] @."

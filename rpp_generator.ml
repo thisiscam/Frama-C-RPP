@@ -392,7 +392,7 @@ class aux_visitor_5 vis_behavior = object
     let rec aux g  =
       match g with
       | [] -> []
-      | { ext_name = "relational"; ext_kind = Ext_preds(_)} :: q -> aux q
+      | { ext_name = "relational"; ext_kind = Ext_preds(_); _} :: q -> aux q
       | h :: q -> h :: aux q
     in
     let b_extended = aux g.b_extended
@@ -441,7 +441,7 @@ class aux_visitor_7 vis_beh formals_map = object(self)
       begin
         match Cil_datatype.Logic_var.Map.find log formals_map with
         | exception Not_found -> ChangeDoChildrenPost(t, fun x -> x)
-        | {term_node = TLval(a,off_sub)} as term ->
+        | {term_node = TLval(a,off_sub); _} as term ->
           let new_offset = Logic_const.addTermOffset off off_sub in
           let new_term =
             {term with term_node = TLval(a,new_offset)}
@@ -524,7 +524,7 @@ let global_binder map self var_map var_map_orig log_map log_map_orig =
   Cil_datatype.Varinfo.Map.iter
     (fun vo data ->
        match  data with
-       | {lv_origin = Some(var)} ->
+       | {lv_origin = Some(var); _} ->
          begin
            match Cil_datatype.Varinfo.Map.find vo !var_map with
            | exception Not_found ->
@@ -902,7 +902,7 @@ class aux_visitor_4 vis current add_global id global_map proj annot_data loc num
         | _ -> ()
       end;
 
-    method private replace_func id v rename exp1 expl return l s name =
+    method private replace_func id v rename expl return l s name =
       let aux vari =
         try Globals.Functions.get vari with
         | Not_found ->  Rpp_options.Self.fatal
@@ -927,7 +927,7 @@ class aux_visitor_4 vis current add_global id global_map proj annot_data loc num
           Project.on proj (
             fun x ->
               let x = aux x in
-              let beha = Annotations.behaviors ~populate:false x in
+              let beha = Annotations.behaviors x in
               (beha,x)
           ) (Visitor_behavior.Get_orig.varinfo vis#behavior v)
         in
@@ -944,8 +944,7 @@ class aux_visitor_4 vis current add_global id global_map proj annot_data loc num
           | None ->
             self#add_rela_pure_func v rename new_kf current_kf;
         end;
-        let new_exp = {exp1 with enode = Lval(Var(new_vi),NoOffset)} in
-        s.skind <- Instr(Call(return,new_exp,expl,l));
+        s.skind <- Instr(Call(return,Var(new_vi),expl,l));
         s
 
       | kf ->
@@ -962,10 +961,7 @@ class aux_visitor_4 vis current add_global id global_map proj annot_data loc num
           | None ->
             self#add_rela_pure_func v rename kf current_kf;
         end;
-        let new_exp =
-          {exp1 with enode = Lval(Var(Globals.Functions.get_vi kf),NoOffset)}
-        in
-        s.skind <- Instr(Call(return,new_exp,expl,l));
+        s.skind <- Instr(Call(return,Var(Globals.Functions.get_vi kf),expl,l));
         s
 
     method private is_inlined v =
@@ -982,42 +978,38 @@ class aux_visitor_4 vis current add_global id global_map proj annot_data loc num
 
     method! vstmt_aux s =
       match s.skind with
-      | Instr(Call(return,exp1,expl,l)) ->
+      | Instr(Call(return,Var(v),expl,l)) ->
         begin
-          match exp1.enode with
-          | Lval(Var(v),NoOffset) ->
-            begin
-              let rename =
-                self#is_inlined v
-              in
-              match id with
-              | Some id ->
-                let name =
-                  String.concat "_" [v.vname;id]
-                in
-                let new_s =
-                  self#replace_func
-                    (Some id) v rename exp1 expl return l s name
-                in
-                Cil.ChangeDoChildrenPost(new_s, fun x->x)
+          let rename =
+            self#is_inlined v
+          in
+          match id with
+          | Some id ->
+            let name =
+              String.concat "_" [v.vname;id]
+            in
+            let new_s =
+              self#replace_func
+                (Some id) v rename expl return l s name
+            in
+            Cil.ChangeDoChildrenPost(new_s, fun x->x)
 
-              | None ->
-                let name =
-                  String.concat "_"
-                    [v.vname;"aux";string_of_int num]
-                in
-                let new_s =
-                  self#replace_func
-                    None v rename exp1 expl return l s name
-                in
-                Cil.ChangeDoChildrenPost(new_s, fun x->x)
-            end
-          | _ ->
-            let (l,_) = loc in
-            Rpp_options.Self.abort ~source:l
-              "Function pointers are not supported: %a @."
-              Printer.pp_stmt s
+          | None ->
+            let name =
+              String.concat "_"
+                [v.vname;"aux";string_of_int num]
+            in
+            let new_s =
+              self#replace_func
+                None v rename expl return l s name
+            in
+            Cil.ChangeDoChildrenPost(new_s, fun x->x)
         end
+      | Instr(Call _) ->
+        let (l,_) = loc in
+        Rpp_options.Self.abort ~source:l
+          "Function pointers are not supported: %a @."
+          Printer.pp_stmt s
       | _ -> Cil.ChangeDoChildrenPost(s,fun x->x)
   end
 
@@ -1116,30 +1108,40 @@ let do_one_require_copy kf formalsi id global_map self proj=
       | Some formalsinit -> formalsinit
       in
           binder_sub
-            f ((Annotations.behaviors ~populate:false kf)) id self formalsinit formalsi global_map
+            f ((Annotations.behaviors kf)) id self formalsinit formalsi global_map
     end
   | Definition (funct,_) ->
     begin
         binder_sub
-          f ((Annotations.behaviors ~populate:false kf)) id self funct.sformals formalsi global_map
+          f ((Annotations.behaviors kf)) id self funct.sformals formalsi global_map
     end
 
 (**
    Function returning the type refering to the new project
 *)
 let rec get_typ_in_current_project t self loc=
-  match t with
-  | TVoid(_) -> t
+  match t.tnode with
+  | TVoid -> t
   | TInt(_) -> t
   | TFloat(_) -> t
-  | TPtr(t,a) -> let new_t = get_typ_in_current_project t self loc in TPtr(new_t,a)
-  | TArray(t,e,b,a) -> let new_t = get_typ_in_current_project t self loc in TArray(new_t,e,b,a)
+  | TPtr(inner) ->
+    let new_t = get_typ_in_current_project inner self loc in
+    Cil_const.mk_typ ~tattr:t.tattr (TPtr(new_t))
+  | TArray(inner,e) ->
+    let new_t = get_typ_in_current_project inner self loc in
+    Cil_const.mk_typ ~tattr:t.tattr (TArray(new_t,e))
   | TFun(_) ->  Rpp_options.Self.abort ~source:loc
                   "Error in predicate: Function types are not supported yet"
-  | TNamed (t,a) -> let new_c = Visitor_behavior.Get.typeinfo self t in TNamed(new_c,a)
-  | TComp (c,b,a) ->let new_c = Visitor_behavior.Get.compinfo self c in TComp(new_c,b,a)
-  | TEnum (e,a) -> let new_e = Visitor_behavior.Get.enuminfo self e in TEnum(new_e,a)
-  | TBuiltin_va_list(_) -> t
+  | TNamed (ti) ->
+    let new_c = Visitor_behavior.Get.typeinfo self ti in
+    Cil_const.mk_typ ~tattr:t.tattr (TNamed(new_c))
+  | TComp (c) ->
+    let new_c = Visitor_behavior.Get.compinfo self c in
+    Cil_const.mk_typ ~tattr:t.tattr (TComp(new_c))
+  | TEnum (e) ->
+    let new_e = Visitor_behavior.Get.enuminfo self e in
+    Cil_const.mk_typ ~tattr:t.tattr (TEnum(new_e))
+  | TBuiltin_va_list -> t
 
 (**
    Function making a copie of the local variable of copie funct for new_funct
@@ -1181,8 +1183,8 @@ let sort_funbehavior funbehavior =
 (**
    Function detecting if a function is variadic
 *)
-let is_variadic_function vi = match vi.vtype with
-  | TFun(_, _, is_v, _) -> is_v
+let is_variadic_function vi = match vi.vtype.tnode with
+  | TFun(_, _, is_v) -> is_v
   | _ -> false
 
 (**
@@ -1193,10 +1195,7 @@ let inliner self proj funct id global_map = object (_)
 
   method !vstmt_aux stmt =
     match stmt.skind with
-    | Instr(Call(return,
-                 { enode = Lval(Var vi, NoOffset)} ,
-                 args,
-                 loc)) ->
+    | Instr(Call(return, Var vi, args, loc)) ->
       begin
         if is_variadic_function vi then
           begin
@@ -1251,6 +1250,7 @@ let inliner self proj funct id global_map = object (_)
                          funct name (get_typ_in_current_project h.vtype self#behavior loc)
                      in
                      funct.sbody.blocals <- old_blk_vi;
+                     let exp = Cil.mkCast ~force:false ~newt:vi'.vtype exp in
                      let init =
                        Cil.mkStmtOneInstr ~valid_sid:true
                          (Set ((Var vi', NoOffset), exp, exp.eloc))
@@ -1346,17 +1346,11 @@ let no_inline resi self kf l formalsi proof id global_map proj annot_data num =
         | Definition (f,_) -> f.svar
         | Declaration (_,v,_,_) -> v
       in
-      let new_exp_node =
-        Lval(Var(var_funct),NoOffset)
-      in
-      let new_exp =
-        Cil.new_exp ~loc:l new_exp_node
-      in
       let params =
         List.map (fun x -> Cil.new_exp ~loc:l (Lval(Var(x),NoOffset)))
           formalsi
       in
-      let k = Instr(Call(return_lval, new_exp, params, l))
+      let k = Instr(Call(return_lval, Var(var_funct), params, l))
       in
       let s = Cil.mkStmt ~valid_sid:true k
       in
@@ -1408,7 +1402,7 @@ let do_inline self kf new_funct resi funct proj locals formalsi global_map id pr
       let body =
         binder f (funct.sbody) funct id self locals formalsi global_map
       in
-  (** Inlining all function  *)
+  (* Inlining all function  *)
       let rec aux b i =
         match i with
         | 0 -> b

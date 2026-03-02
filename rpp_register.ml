@@ -39,4 +39,4 @@ let run () =
     Rpp_core.print_hello "Rpp end"
   )
 
-let () =  Db.Main.extend run
+let () =  Boot.Main.extend run
