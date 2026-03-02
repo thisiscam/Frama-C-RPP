@@ -404,14 +404,8 @@ class aux_visitor_6 vis_beh = object(_)
 
   method! vterm t =
     match t.term_node with
-    | TLval(TMem(t_aux),TNoOffset) ->
+    | TLval(TMem(t_aux),_) ->
       ChangeDoChildrenPost(t_aux, fun x -> x)
-    | TLval(TMem(_),_) ->
-      let (l,_) = t.term_loc in
-      Rpp_options.Self.abort ~source:l
-        "Unsupported term in separate generation:@. @[%a@] @."
-        Printer.pp_term t
-
     | _ -> DoChildren
 end
 
@@ -420,13 +414,8 @@ class aux_visitor_7 vis_beh formals_map = object(self)
 
   method! vterm t =
     match t.term_node with
-    | TLval(TMem(t_aux),TNoOffset) ->
+    | TLval(TMem(t_aux),_) ->
       self#vterm t_aux
-    | TLval(TMem(_),_) ->
-      let (l,_) = t.term_loc in
-      Rpp_options.Self.abort ~source:l
-        "Unsupported term in separate generation:@. @[%a@] @."
-        Printer.pp_term t
 
     (* Use "\let in" in the future if more support is require*)
 
