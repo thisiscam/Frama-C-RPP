@@ -89,6 +89,7 @@ class virtual ['a] rpp_visitor = object (self:'a)
   method virtual build_call_unop : _
   method virtual build_call_valme : _
   method virtual build_call_Toffset : _
+  method virtual build_call_addrof : _
 
   method visit_call_app env inline funct formals ty =
     let new_terms = List.map (fun x -> self#visit_call env x) formals in
@@ -175,6 +176,8 @@ class virtual ['a] rpp_visitor = object (self:'a)
                       Printer.pp_term term
     | TLval(TMem(t),off) ->
       self#visit_call_valme env t off (term.term_type)
+    | TAddrOf(_, _) ->
+      self#build_call_addrof env term
     | _ ->   Rpp_options.Self.fatal ~source:loc
                "Something went wrong during parsing: Not supported\
                 term in parameter of \\callpure"

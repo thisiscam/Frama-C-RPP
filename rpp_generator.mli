@@ -20,6 +20,7 @@
 
 val do_one_copy:
 ?proof:bool ->
+?fptr_targets:Cil_types.varinfo Cil_datatype.Varinfo.Map.t ->
 Kernel_function.t -> Cil_types.varinfo list -> Cil_types.varinfo option ->
 Cil_types.varinfo list -> Datatype.String.Map.key option ->
 (Cil_types.logic_var Cil_datatype.Varinfo.Map.t *
