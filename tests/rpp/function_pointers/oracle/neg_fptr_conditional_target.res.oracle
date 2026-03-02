@@ -1,0 +1,10 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_conditional_target.c (with preprocessing)
+[rpp] ***************************************
+[rpp] Rpp start
+[rpp] ***************************************
+[rpp] tests/rpp/function_pointers/neg_fptr_conditional_target.c:40: User Error: 
+  Indirect call through function pointer could not be resolved.
+  Ensure the function pointer argument is a concrete function address
+  (e.g., &func_name) and the callee has a /*@ calls ...; */ annotation: 
+  tmp_1 = (*chosen_1)(x1);
+[kernel] Plug-in rpp aborted: invalid user input.
