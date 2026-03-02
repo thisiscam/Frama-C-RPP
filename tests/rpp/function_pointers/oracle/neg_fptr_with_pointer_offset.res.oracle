@@ -1,0 +1,7 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_with_pointer_offset.c (with preprocessing)
+[rpp] ***************************************
+[rpp] Rpp start
+[rpp] ***************************************
+[rpp] tests/rpp/function_pointers/neg_fptr_with_pointer_offset.c:36: User Error: 
+  Pointer variable arr is assigned or used in trace id2 but also in another trace. Memory sharing is not supported yet. Declare a new pointer variable for trace id2
+[kernel] Plug-in rpp aborted: invalid user input.
