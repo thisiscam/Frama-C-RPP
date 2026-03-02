@@ -1,0 +1,6 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_wrong_param_count.c (with preprocessing)
+[kernel:annot-error] tests/rpp/function_pointers/neg_fptr_wrong_param_count.c:21: Failure: 
+  Expected 2 parameter for the call of the pure function apply 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

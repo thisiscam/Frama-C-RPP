@@ -1,0 +1,5 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_unknown_function.c (with preprocessing)
+[kernel:annot-error] tests/rpp/function_pointers/neg_fptr_unknown_function.c:20: Failure: 
+  unbound logic variable nonexistent_func. Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

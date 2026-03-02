@@ -1,0 +1,7 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_unknown_callresult_id.c (with preprocessing)
+[kernel:annot-error] tests/rpp/function_pointers/neg_fptr_unknown_callresult_id.c:21: Failure: 
+  Unknown identifier id_typo for 
+   \callresult  (id_typo) 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

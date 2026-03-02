@@ -1,0 +1,7 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_call_with_label.c (with preprocessing)
+[kernel:annot-error] tests/rpp/function_pointers/neg_fptr_call_with_label.c:21: Failure: 
+  Expect no label for built-in \call: 
+   \call <Pre> (step, &inc, x1, id1) 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

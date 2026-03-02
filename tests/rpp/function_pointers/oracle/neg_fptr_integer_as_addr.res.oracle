@@ -1,0 +1,7 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_integer_as_addr.c (with preprocessing)
+[kernel:annot-error] tests/rpp/function_pointers/neg_fptr_integer_as_addr.c:21: Failure: 
+  Cast are not supported:
+   ℤ and int (*)(int ) are not compatible for term 42 in call of apply 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.
