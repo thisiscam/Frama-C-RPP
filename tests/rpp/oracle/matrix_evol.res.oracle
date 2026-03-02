@@ -31,7 +31,7 @@ axiomatic Relational_axiome_2 {
            sum_acsl_pure_2(trans2_acsl_pure_2(m1), trans2_acsl_pure_2(m2)),
            4);
   
-  }
+}
  */
 /*@
 axiomatic Relational_axiome_1 {
@@ -40,10 +40,9 @@ axiomatic Relational_axiome_1 {
   logic struct matrix trans2_acsl_pure_1(struct matrix m) ;
   
   lemma Relational_lemma_1{L}:
-    ∀ struct matrix m;
-      is_eq(trans2_acsl_pure_1(m), trans_acsl_pure_1(m), 4);
+    ∀ struct matrix m; is_eq(trans2_acsl_pure_1(m), trans_acsl_pure_1(m), 4);
   
-  }
+}
  */
 /*@ assigns \result;
     assigns \result \from m;
@@ -76,7 +75,7 @@ axiomatic Relational_axiome_3 {
       is_eq(trans_acsl_pure_3(sum_acsl_pure_3(m1, m2)),
            sum_acsl_pure_3(trans_acsl_pure_3(m1), trans_acsl_pure_3(m2)), 4);
   
-  }
+}
  */
 /*@
 axiomatic Relational_axiome_6 {
@@ -90,7 +89,7 @@ axiomatic Relational_axiome_6 {
                 sum_acsl_pure_6(trans_acsl_pure_6(m1), trans_acsl_pure_6(m2)),
                 2);
   
-  }
+}
  */
 /*@
 axiomatic Relational_axiome_5 {
@@ -104,7 +103,7 @@ axiomatic Relational_axiome_5 {
                 sum_acsl_pure_5(trans_acsl_pure_5(m1), trans_acsl_pure_5(m2)),
                 1);
   
-  }
+}
  */
 /*@
 axiomatic Relational_axiome_7 {
@@ -118,7 +117,7 @@ axiomatic Relational_axiome_7 {
                 sum_acsl_pure_7(trans_acsl_pure_7(m1), trans_acsl_pure_7(m2)),
                 3);
   
-  }
+}
  */
 /*@
 axiomatic Relational_axiome_4 {
@@ -132,7 +131,7 @@ axiomatic Relational_axiome_4 {
                 sum_acsl_pure_4(trans_acsl_pure_4(m1), trans_acsl_pure_4(m2)),
                 0);
   
-  }
+}
 
 */
 /*@ assigns \result;
@@ -166,8 +165,7 @@ struct matrix trans(struct matrix m)
       loop invariant 0 ≤ j ≤ 2;
       loop invariant
         ∀ int k;
-          0 ≤ k < 2 ∧ i > 0 ⇒
-          m_t.m[(i - 1) * 2 + k] ≡ m.m[k * 2 + (i - 1)];
+          0 ≤ k < 2 ∧ i > 0 ⇒ m_t.m[(i - 1) * 2 + k] ≡ m.m[k * 2 + (i - 1)];
       loop invariant
         ∀ int k, int g;
           0 ≤ k < 2 ∧ 0 ≤ g < i ⇒ m_t.m[g * 2 + k] ≡ m.m[k * 2 + g];
@@ -180,8 +178,7 @@ struct matrix trans(struct matrix m)
         loop invariant 0 ≤ i < 2;
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i ⇒
-            m_t.m[g * 2 + k] ≡ m.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i ⇒ m_t.m[g * 2 + k] ≡ m.m[k * 2 + g];
         loop invariant
           ∀ int k; 0 ≤ k < j ⇒ m_t.m[i * 2 + k] ≡ m.m[k * 2 + i];
         loop assigns j, m_t;
@@ -224,8 +221,7 @@ struct matrix sum(struct matrix m_a, struct matrix m_b)
   int i = 0;
   i = 0;
   /*@ loop invariant 0 ≤ i ≤ 4;
-      loop invariant
-        ∀ int k; 0 ≤ k < i ⇒ m_s.m[k] ≡ m_a.m[k] + m_b.m[k];
+      loop invariant ∀ int k; 0 ≤ k < i ⇒ m_s.m[k] ≡ m_a.m[k] + m_b.m[k];
       loop assigns m_s, i;
   */
   while (i < 4) {
@@ -261,8 +257,7 @@ void relational_wrapper_1(struct matrix m)
             m_t_2.m[(i_2 - 1) * 2 + k] ≡ m.m[k * 2 + (i_2 - 1)];
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i_2 ⇒
-            m_t_2.m[g * 2 + k] ≡ m.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i_2 ⇒ m_t_2.m[g * 2 + k] ≡ m.m[k * 2 + g];
         loop assigns i_2, j_2, m_t_2;
         loop variant 2 - i_2;
     */
@@ -272,11 +267,9 @@ void relational_wrapper_1(struct matrix m)
           loop invariant 0 ≤ i_2 < 2;
           loop invariant
             ∀ int k, int g;
-              0 ≤ k < 2 ∧ 0 ≤ g < i_2 ⇒
-              m_t_2.m[g * 2 + k] ≡ m.m[k * 2 + g];
+              0 ≤ k < 2 ∧ 0 ≤ g < i_2 ⇒ m_t_2.m[g * 2 + k] ≡ m.m[k * 2 + g];
           loop invariant
-            ∀ int k;
-              0 ≤ k < j_2 ⇒ m_t_2.m[i_2 * 2 + k] ≡ m.m[k * 2 + i_2];
+            ∀ int k; 0 ≤ k < j_2 ⇒ m_t_2.m[i_2 * 2 + k] ≡ m.m[k * 2 + i_2];
           loop assigns j_2, m_t_2;
           loop variant 2 - j_2;
       */
@@ -290,8 +283,9 @@ void relational_wrapper_1(struct matrix m)
     return_variable_relational_2 = m_t_2;
   }
   /*@ check
-      Rpp:
-        is_eq(return_variable_relational_1, return_variable_relational_2, 4);
+        Rpp:
+          is_eq(return_variable_relational_1, return_variable_relational_2,
+               4);
   */
   return;
 }
@@ -308,8 +302,7 @@ void relational_wrapper_2(struct matrix m1, struct matrix m2)
     int i_3 = 0;
     i_3 = 0;
     /*@ loop invariant 0 ≤ i_3 ≤ 4;
-        loop invariant
-          ∀ int k; 0 ≤ k < i_3 ⇒ m_s_3.m[k] ≡ m1.m[k] + m2.m[k];
+        loop invariant ∀ int k; 0 ≤ k < i_3 ⇒ m_s_3.m[k] ≡ m1.m[k] + m2.m[k];
         loop assigns m_s_3, i_3;
     */
     while (i_3 < 4) {
@@ -365,8 +358,9 @@ void relational_wrapper_2(struct matrix m1, struct matrix m2)
     return_variable_relational_4 = m_s_7;
   }
   /*@ check
-      Rpp:
-        is_eq(return_variable_relational_3, return_variable_relational_4, 4);
+        Rpp:
+          is_eq(return_variable_relational_3, return_variable_relational_4,
+               4);
   */
   return;
 }
@@ -383,8 +377,7 @@ void relational_wrapper_3(struct matrix m1, struct matrix m2)
     int i_8 = 0;
     i_8 = 0;
     /*@ loop invariant 0 ≤ i_8 ≤ 4;
-        loop invariant
-          ∀ int k; 0 ≤ k < i_8 ⇒ m_s_8.m[k] ≡ m1.m[k] + m2.m[k];
+        loop invariant ∀ int k; 0 ≤ k < i_8 ⇒ m_s_8.m[k] ≡ m1.m[k] + m2.m[k];
         loop assigns m_s_8, i_8;
     */
     while (i_8 < 4) {
@@ -450,8 +443,7 @@ void relational_wrapper_3(struct matrix m1, struct matrix m2)
             m_t_10.m[(i_10 - 1) * 2 + k] ≡ m1.m[k * 2 + (i_10 - 1)];
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i_10 ⇒
-            m_t_10.m[g * 2 + k] ≡ m1.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i_10 ⇒ m_t_10.m[g * 2 + k] ≡ m1.m[k * 2 + g];
         loop assigns i_10, j_10, m_t_10;
         loop variant 2 - i_10;
     */
@@ -465,8 +457,7 @@ void relational_wrapper_3(struct matrix m1, struct matrix m2)
               m_t_10.m[g * 2 + k] ≡ m1.m[k * 2 + g];
           loop invariant
             ∀ int k;
-              0 ≤ k < j_10 ⇒
-              m_t_10.m[i_10 * 2 + k] ≡ m1.m[k * 2 + i_10];
+              0 ≤ k < j_10 ⇒ m_t_10.m[i_10 * 2 + k] ≡ m1.m[k * 2 + i_10];
           loop assigns j_10, m_t_10;
           loop variant 2 - j_10;
       */
@@ -492,8 +483,7 @@ void relational_wrapper_3(struct matrix m1, struct matrix m2)
             m_t_11.m[(i_11 - 1) * 2 + k] ≡ m2.m[k * 2 + (i_11 - 1)];
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i_11 ⇒
-            m_t_11.m[g * 2 + k] ≡ m2.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i_11 ⇒ m_t_11.m[g * 2 + k] ≡ m2.m[k * 2 + g];
         loop assigns i_11, j_11, m_t_11;
         loop variant 2 - i_11;
     */
@@ -507,8 +497,7 @@ void relational_wrapper_3(struct matrix m1, struct matrix m2)
               m_t_11.m[g * 2 + k] ≡ m2.m[k * 2 + g];
           loop invariant
             ∀ int k;
-              0 ≤ k < j_11 ⇒
-              m_t_11.m[i_11 * 2 + k] ≡ m2.m[k * 2 + i_11];
+              0 ≤ k < j_11 ⇒ m_t_11.m[i_11 * 2 + k] ≡ m2.m[k * 2 + i_11];
           loop assigns j_11, m_t_11;
           loop variant 2 - j_11;
       */
@@ -541,8 +530,9 @@ void relational_wrapper_3(struct matrix m1, struct matrix m2)
     return_variable_relational_6 = m_s_12;
   }
   /*@ check
-      Rpp:
-        is_eq(return_variable_relational_5, return_variable_relational_6, 4);
+        Rpp:
+          is_eq(return_variable_relational_5, return_variable_relational_6,
+               4);
   */
   return;
 }
@@ -595,8 +585,7 @@ void relational_wrapper_4(struct matrix m1, struct matrix m2)
           loop invariant
             ∀ int k, int g;
               0 ≤ k < 2 ∧ 0 ≤ g < i_14 ⇒
-              m_t_14.m[g * 2 + k] ≡
-              local_variable_relational_7.m[k * 2 + g];
+              m_t_14.m[g * 2 + k] ≡ local_variable_relational_7.m[k * 2 + g];
           loop invariant
             ∀ int k;
               0 ≤ k < j_14 ⇒
@@ -627,8 +616,7 @@ void relational_wrapper_4(struct matrix m1, struct matrix m2)
             m_t_15.m[(i_15 - 1) * 2 + k] ≡ m1.m[k * 2 + (i_15 - 1)];
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i_15 ⇒
-            m_t_15.m[g * 2 + k] ≡ m1.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i_15 ⇒ m_t_15.m[g * 2 + k] ≡ m1.m[k * 2 + g];
         loop assigns i_15, j_15, m_t_15;
         loop variant 2 - i_15;
     */
@@ -642,8 +630,7 @@ void relational_wrapper_4(struct matrix m1, struct matrix m2)
               m_t_15.m[g * 2 + k] ≡ m1.m[k * 2 + g];
           loop invariant
             ∀ int k;
-              0 ≤ k < j_15 ⇒
-              m_t_15.m[i_15 * 2 + k] ≡ m1.m[k * 2 + i_15];
+              0 ≤ k < j_15 ⇒ m_t_15.m[i_15 * 2 + k] ≡ m1.m[k * 2 + i_15];
           loop assigns j_15, m_t_15;
           loop variant 2 - j_15;
       */
@@ -669,8 +656,7 @@ void relational_wrapper_4(struct matrix m1, struct matrix m2)
             m_t_16.m[(i_16 - 1) * 2 + k] ≡ m2.m[k * 2 + (i_16 - 1)];
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i_16 ⇒
-            m_t_16.m[g * 2 + k] ≡ m2.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i_16 ⇒ m_t_16.m[g * 2 + k] ≡ m2.m[k * 2 + g];
         loop assigns i_16, j_16, m_t_16;
         loop variant 2 - i_16;
     */
@@ -684,8 +670,7 @@ void relational_wrapper_4(struct matrix m1, struct matrix m2)
               m_t_16.m[g * 2 + k] ≡ m2.m[k * 2 + g];
           loop invariant
             ∀ int k;
-              0 ≤ k < j_16 ⇒
-              m_t_16.m[i_16 * 2 + k] ≡ m2.m[k * 2 + i_16];
+              0 ≤ k < j_16 ⇒ m_t_16.m[i_16 * 2 + k] ≡ m2.m[k * 2 + i_16];
           loop assigns j_16, m_t_16;
           loop variant 2 - j_16;
       */
@@ -718,9 +703,9 @@ void relational_wrapper_4(struct matrix m1, struct matrix m2)
     return_variable_relational_8 = m_s_17;
   }
   /*@ check
-      Rpp:
-        is_eq_test(return_variable_relational_7,
-                  return_variable_relational_8, 0);
+        Rpp:
+          is_eq_test(return_variable_relational_7,
+                    return_variable_relational_8, 0);
   */
   return;
 }
@@ -773,8 +758,7 @@ void relational_wrapper_5(struct matrix m1, struct matrix m2)
           loop invariant
             ∀ int k, int g;
               0 ≤ k < 2 ∧ 0 ≤ g < i_19 ⇒
-              m_t_19.m[g * 2 + k] ≡
-              local_variable_relational_10.m[k * 2 + g];
+              m_t_19.m[g * 2 + k] ≡ local_variable_relational_10.m[k * 2 + g];
           loop invariant
             ∀ int k;
               0 ≤ k < j_19 ⇒
@@ -805,8 +789,7 @@ void relational_wrapper_5(struct matrix m1, struct matrix m2)
             m_t_20.m[(i_20 - 1) * 2 + k] ≡ m1.m[k * 2 + (i_20 - 1)];
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i_20 ⇒
-            m_t_20.m[g * 2 + k] ≡ m1.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i_20 ⇒ m_t_20.m[g * 2 + k] ≡ m1.m[k * 2 + g];
         loop assigns i_20, j_20, m_t_20;
         loop variant 2 - i_20;
     */
@@ -820,8 +803,7 @@ void relational_wrapper_5(struct matrix m1, struct matrix m2)
               m_t_20.m[g * 2 + k] ≡ m1.m[k * 2 + g];
           loop invariant
             ∀ int k;
-              0 ≤ k < j_20 ⇒
-              m_t_20.m[i_20 * 2 + k] ≡ m1.m[k * 2 + i_20];
+              0 ≤ k < j_20 ⇒ m_t_20.m[i_20 * 2 + k] ≡ m1.m[k * 2 + i_20];
           loop assigns j_20, m_t_20;
           loop variant 2 - j_20;
       */
@@ -847,8 +829,7 @@ void relational_wrapper_5(struct matrix m1, struct matrix m2)
             m_t_21.m[(i_21 - 1) * 2 + k] ≡ m2.m[k * 2 + (i_21 - 1)];
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i_21 ⇒
-            m_t_21.m[g * 2 + k] ≡ m2.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i_21 ⇒ m_t_21.m[g * 2 + k] ≡ m2.m[k * 2 + g];
         loop assigns i_21, j_21, m_t_21;
         loop variant 2 - i_21;
     */
@@ -862,8 +843,7 @@ void relational_wrapper_5(struct matrix m1, struct matrix m2)
               m_t_21.m[g * 2 + k] ≡ m2.m[k * 2 + g];
           loop invariant
             ∀ int k;
-              0 ≤ k < j_21 ⇒
-              m_t_21.m[i_21 * 2 + k] ≡ m2.m[k * 2 + i_21];
+              0 ≤ k < j_21 ⇒ m_t_21.m[i_21 * 2 + k] ≡ m2.m[k * 2 + i_21];
           loop assigns j_21, m_t_21;
           loop variant 2 - j_21;
       */
@@ -896,9 +876,9 @@ void relational_wrapper_5(struct matrix m1, struct matrix m2)
     return_variable_relational_10 = m_s_22;
   }
   /*@ check
-      Rpp:
-        is_eq_test(return_variable_relational_9,
-                  return_variable_relational_10, 1);
+        Rpp:
+          is_eq_test(return_variable_relational_9,
+                    return_variable_relational_10, 1);
   */
   return;
 }
@@ -951,8 +931,7 @@ void relational_wrapper_6(struct matrix m1, struct matrix m2)
           loop invariant
             ∀ int k, int g;
               0 ≤ k < 2 ∧ 0 ≤ g < i_24 ⇒
-              m_t_24.m[g * 2 + k] ≡
-              local_variable_relational_13.m[k * 2 + g];
+              m_t_24.m[g * 2 + k] ≡ local_variable_relational_13.m[k * 2 + g];
           loop invariant
             ∀ int k;
               0 ≤ k < j_24 ⇒
@@ -983,8 +962,7 @@ void relational_wrapper_6(struct matrix m1, struct matrix m2)
             m_t_25.m[(i_25 - 1) * 2 + k] ≡ m1.m[k * 2 + (i_25 - 1)];
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i_25 ⇒
-            m_t_25.m[g * 2 + k] ≡ m1.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i_25 ⇒ m_t_25.m[g * 2 + k] ≡ m1.m[k * 2 + g];
         loop assigns i_25, j_25, m_t_25;
         loop variant 2 - i_25;
     */
@@ -998,8 +976,7 @@ void relational_wrapper_6(struct matrix m1, struct matrix m2)
               m_t_25.m[g * 2 + k] ≡ m1.m[k * 2 + g];
           loop invariant
             ∀ int k;
-              0 ≤ k < j_25 ⇒
-              m_t_25.m[i_25 * 2 + k] ≡ m1.m[k * 2 + i_25];
+              0 ≤ k < j_25 ⇒ m_t_25.m[i_25 * 2 + k] ≡ m1.m[k * 2 + i_25];
           loop assigns j_25, m_t_25;
           loop variant 2 - j_25;
       */
@@ -1025,8 +1002,7 @@ void relational_wrapper_6(struct matrix m1, struct matrix m2)
             m_t_26.m[(i_26 - 1) * 2 + k] ≡ m2.m[k * 2 + (i_26 - 1)];
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i_26 ⇒
-            m_t_26.m[g * 2 + k] ≡ m2.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i_26 ⇒ m_t_26.m[g * 2 + k] ≡ m2.m[k * 2 + g];
         loop assigns i_26, j_26, m_t_26;
         loop variant 2 - i_26;
     */
@@ -1040,8 +1016,7 @@ void relational_wrapper_6(struct matrix m1, struct matrix m2)
               m_t_26.m[g * 2 + k] ≡ m2.m[k * 2 + g];
           loop invariant
             ∀ int k;
-              0 ≤ k < j_26 ⇒
-              m_t_26.m[i_26 * 2 + k] ≡ m2.m[k * 2 + i_26];
+              0 ≤ k < j_26 ⇒ m_t_26.m[i_26 * 2 + k] ≡ m2.m[k * 2 + i_26];
           loop assigns j_26, m_t_26;
           loop variant 2 - j_26;
       */
@@ -1074,9 +1049,9 @@ void relational_wrapper_6(struct matrix m1, struct matrix m2)
     return_variable_relational_12 = m_s_27;
   }
   /*@ check
-      Rpp:
-        is_eq_test(return_variable_relational_11,
-                  return_variable_relational_12, 2);
+        Rpp:
+          is_eq_test(return_variable_relational_11,
+                    return_variable_relational_12, 2);
   */
   return;
 }
@@ -1129,8 +1104,7 @@ void relational_wrapper_7(struct matrix m1, struct matrix m2)
           loop invariant
             ∀ int k, int g;
               0 ≤ k < 2 ∧ 0 ≤ g < i_29 ⇒
-              m_t_29.m[g * 2 + k] ≡
-              local_variable_relational_16.m[k * 2 + g];
+              m_t_29.m[g * 2 + k] ≡ local_variable_relational_16.m[k * 2 + g];
           loop invariant
             ∀ int k;
               0 ≤ k < j_29 ⇒
@@ -1161,8 +1135,7 @@ void relational_wrapper_7(struct matrix m1, struct matrix m2)
             m_t_30.m[(i_30 - 1) * 2 + k] ≡ m1.m[k * 2 + (i_30 - 1)];
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i_30 ⇒
-            m_t_30.m[g * 2 + k] ≡ m1.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i_30 ⇒ m_t_30.m[g * 2 + k] ≡ m1.m[k * 2 + g];
         loop assigns i_30, j_30, m_t_30;
         loop variant 2 - i_30;
     */
@@ -1176,8 +1149,7 @@ void relational_wrapper_7(struct matrix m1, struct matrix m2)
               m_t_30.m[g * 2 + k] ≡ m1.m[k * 2 + g];
           loop invariant
             ∀ int k;
-              0 ≤ k < j_30 ⇒
-              m_t_30.m[i_30 * 2 + k] ≡ m1.m[k * 2 + i_30];
+              0 ≤ k < j_30 ⇒ m_t_30.m[i_30 * 2 + k] ≡ m1.m[k * 2 + i_30];
           loop assigns j_30, m_t_30;
           loop variant 2 - j_30;
       */
@@ -1203,8 +1175,7 @@ void relational_wrapper_7(struct matrix m1, struct matrix m2)
             m_t_31.m[(i_31 - 1) * 2 + k] ≡ m2.m[k * 2 + (i_31 - 1)];
         loop invariant
           ∀ int k, int g;
-            0 ≤ k < 2 ∧ 0 ≤ g < i_31 ⇒
-            m_t_31.m[g * 2 + k] ≡ m2.m[k * 2 + g];
+            0 ≤ k < 2 ∧ 0 ≤ g < i_31 ⇒ m_t_31.m[g * 2 + k] ≡ m2.m[k * 2 + g];
         loop assigns i_31, j_31, m_t_31;
         loop variant 2 - i_31;
     */
@@ -1218,8 +1189,7 @@ void relational_wrapper_7(struct matrix m1, struct matrix m2)
               m_t_31.m[g * 2 + k] ≡ m2.m[k * 2 + g];
           loop invariant
             ∀ int k;
-              0 ≤ k < j_31 ⇒
-              m_t_31.m[i_31 * 2 + k] ≡ m2.m[k * 2 + i_31];
+              0 ≤ k < j_31 ⇒ m_t_31.m[i_31 * 2 + k] ≡ m2.m[k * 2 + i_31];
           loop assigns j_31, m_t_31;
           loop variant 2 - j_31;
       */
@@ -1252,9 +1222,9 @@ void relational_wrapper_7(struct matrix m1, struct matrix m2)
     return_variable_relational_14 = m_s_32;
   }
   /*@ check
-      Rpp:
-        is_eq_test(return_variable_relational_13,
-                  return_variable_relational_14, 3);
+        Rpp:
+          is_eq_test(return_variable_relational_13,
+                    return_variable_relational_14, 3);
   */
   return;
 }

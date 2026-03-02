@@ -14,7 +14,7 @@ axiomatic Relational_axiome_1 {
       k_acsl_1(y_id1_pre, y_id1_post) ⇒
       y_id1_pre < y_id2_pre ⇒ y_id1_post < y_id2_post;
   
-  }
+}
  */
 /*@ requires y > 0;
     assigns y;
@@ -37,13 +37,12 @@ axiomatic Relational_axiome_2 {
   
   lemma Relational_lemma_2{L}:
     ∀ int j_id4_pre, int g_id4_pre, int j_id4_post, int j_id3_pre,
-        int g_id3_pre, int j_id3_post;
+      int g_id3_pre, int j_id3_post;
       f_acsl_2(g_id4_pre, j_id4_pre, j_id4_post) ⇒
       f_acsl_2(g_id3_pre, j_id3_pre, j_id3_post) ⇒
-      j_id3_pre < j_id4_pre ∧ g_id3_pre ≡ g_id4_pre ⇒
-      j_id3_post < j_id4_post;
+      j_id3_pre < j_id4_pre ∧ g_id3_pre ≡ g_id4_pre ⇒ j_id3_post < j_id4_post;
   
-  }
+}
 
 */
 /*@ requires j > 0;
@@ -75,9 +74,9 @@ void relational_wrapper_1(void)
   y_id2_1 += 5;
   ;
   /*@ check
-      Rpp:
-        \at(y_id1_1,Pre) < \at(y_id2_1,Pre) ⇒
-        \at(y_id1_1,Here) < \at(y_id2_1,Here);
+        Rpp:
+          \at(y_id1_1,Pre) < \at(y_id2_1,Pre) ⇒
+          \at(y_id1_1,Here) < \at(y_id2_1,Here);
   */
   return;
 }
@@ -106,10 +105,10 @@ void relational_wrapper_2(void)
   j_id4_2 = (j_id4_2 + g_id4_2) + 5;
   ;
   /*@ check
-      Rpp:
-        \at(j_id3_2,Pre) < \at(j_id4_2,Pre) ∧
-        \at(g_id3_2,Pre) ≡ \at(g_id4_2,Pre) ⇒
-        \at(j_id3_2,Here) < \at(j_id4_2,Here);
+        Rpp:
+          \at(j_id3_2,Pre) < \at(j_id4_2,Pre) ∧
+          \at(g_id3_2,Pre) ≡ \at(g_id4_2,Pre) ⇒
+          \at(j_id3_2,Here) < \at(j_id4_2,Here);
   */
   return;
 }

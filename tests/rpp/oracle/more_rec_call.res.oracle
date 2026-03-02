@@ -12,7 +12,7 @@ axiomatic Relational_axiome_1 {
   lemma Relational_lemma_1{L}:
     ∀ int k, int h; g_acsl_pure_1(f_acsl_pure_1(k, h), h) ≡ 0;
   
-  }
+}
  */
 /*@ requires x > 0 ∧ z < 15;
     assigns \result;

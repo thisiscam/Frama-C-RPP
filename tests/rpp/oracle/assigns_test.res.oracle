@@ -11,7 +11,7 @@ axiomatic Relational_axiome_1 {
   lemma Relational_lemma_1{L}:
     ∀ int x, int y_id1_post; f_acsl_1(x, y_id1_post) ⇒ y_id1_post ≡ x;
   
-  }
+}
  */
 /*@ assigns y;
     assigns y \from x;

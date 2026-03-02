@@ -13,7 +13,7 @@ axiomatic Relational_axiome_1 {
     ∀ int x, int z, int y, int h;
       g_acsl_pure_1(y, h) + f_acsl_pure_1(x, z) > 125;
   
-  }
+}
  */
 /*@ requires x > 0 ∧ z > 15;
     assigns \result;
@@ -62,7 +62,8 @@ void relational_wrapper_1(int x, int z, int y, int h)
     return_variable_relational_2 = __retres_2;
   }
   /*@ check
-      Rpp: return_variable_relational_1 + return_variable_relational_2 > 125;
+        Rpp:
+          return_variable_relational_1 + return_variable_relational_2 > 125;
   */
   return;
 }

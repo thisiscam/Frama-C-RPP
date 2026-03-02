@@ -13,7 +13,7 @@ axiomatic Relational_axiome_1 {
     ∀ int x, int y;
       x ≥ 0 ⇒ f_acsl_pure_1(g_acsl_pure_1(x), y) ≡ g_acsl_pure_1(x);
   
-  }
+}
  */
 /*@ requires x ≥ 0;
     assigns \result;
@@ -61,9 +61,8 @@ void relational_wrapper_1(int x, int y)
   /*@ assert Rpp: x ≥ 0; */
   return_variable_relational_2 = x;
   /*@ check
-      Rpp:
-        x ≥ 0 ⇒
-        return_variable_relational_1 ≡ return_variable_relational_2;
+        Rpp:
+          x ≥ 0 ⇒ return_variable_relational_1 ≡ return_variable_relational_2;
   */
   return;
 }

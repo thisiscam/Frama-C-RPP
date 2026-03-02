@@ -17,7 +17,7 @@ void relational_wrapper_1(void)
 /*@ axiomatic Relational_axiome_1 {
       lemma Relational_lemma_1{L}: 1 < 2;
       
-      }
+    }
 
 */
 

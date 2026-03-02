@@ -16,7 +16,7 @@ axiomatic Relational_axiome_1 {
       return_variable_relational_1 ≡
       \at(*(tb + 1),pre_id1) + \at(*(tb + (x - 1)),pre_id1);
   
-  }
+}
  */
 /*@ requires \separated(t + (0 .. n), y);
     requires n > 0;
@@ -48,9 +48,9 @@ void relational_wrapper_1(int x, int *tb)
     return_variable_relational_1 = __retres_1;
   }
   /*@ check
-      Rpp:
-        return_variable_relational_1 ≡
-        \at(*(tb + 1),Pre) + \at(*(tb + (x - 1)),Pre);
+        Rpp:
+          return_variable_relational_1 ≡
+          \at(*(tb + 1),Pre) + \at(*(tb + (x - 1)),Pre);
   */
   return;
 }

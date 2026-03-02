@@ -13,7 +13,7 @@ axiomatic Relational_axiome_1 {
     ∀ int x, int y;
       max_acsl_pure_1(x, y) ≡ ((x + y) + abs_acsl_pure_1((int)(x - y))) / 2;
   
-  }
+}
  */
 /*@
 axiomatic Relational_axiome_2 {
@@ -25,7 +25,7 @@ axiomatic Relational_axiome_2 {
     ∀ int x, int y;
       min_acsl_pure_2(x, y) ≡ ((x + y) - abs_acsl_pure_2((int)(x - y))) / 2;
   
-  }
+}
  */
 /*@ assigns \result;
     assigns \result \from x;
@@ -79,7 +79,7 @@ void relational_wrapper_1(int x, int y)
     if (x >= y) tmp_1 = x; else tmp_1 = y;
     return_variable_relational_1 = tmp_1;
   }
-  aux_local_variable_1 = x - y;
+  aux_local_variable_1 = (int)(x - y);
   {
     int tmp_2;
     if (aux_local_variable_1 >= 0) tmp_2 = aux_local_variable_1;
@@ -87,9 +87,9 @@ void relational_wrapper_1(int x, int y)
     return_variable_relational_2 = tmp_2;
   }
   /*@ check
-      Rpp:
-        return_variable_relational_1 ≡
-        ((x + y) + return_variable_relational_2) / 2;
+        Rpp:
+          return_variable_relational_1 ≡
+          ((x + y) + return_variable_relational_2) / 2;
   */
   return;
 }
@@ -104,7 +104,7 @@ void relational_wrapper_2(int x, int y)
     if (x >= y) tmp_3 = y; else tmp_3 = x;
     return_variable_relational_3 = tmp_3;
   }
-  aux_local_variable_2 = x - y;
+  aux_local_variable_2 = (int)(x - y);
   {
     int tmp_4;
     if (aux_local_variable_2 >= 0) tmp_4 = aux_local_variable_2;
@@ -112,9 +112,9 @@ void relational_wrapper_2(int x, int y)
     return_variable_relational_4 = tmp_4;
   }
   /*@ check
-      Rpp:
-        return_variable_relational_3 ≡
-        ((x + y) - return_variable_relational_4) / 2;
+        Rpp:
+          return_variable_relational_3 ≡
+          ((x + y) - return_variable_relational_4) / 2;
   */
   return;
 }

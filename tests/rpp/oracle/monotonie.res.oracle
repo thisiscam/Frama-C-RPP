@@ -11,7 +11,7 @@ axiomatic Relational_axiome_1 {
   lemma Relational_lemma_1{L}:
     ∀ int x1, int x2; x1 < x2 ⇒ f1_acsl_pure_1(x1) < f1_acsl_pure_1(x2);
   
-  }
+}
  */
 /*@ assigns \result;
     assigns \result \from x;
@@ -41,9 +41,9 @@ void relational_wrapper_1(int x1, int x2)
     return_variable_relational_2 = __retres_2;
   }
   /*@ check
-      Rpp:
-        x1 < x2 ⇒
-        return_variable_relational_1 < return_variable_relational_2;
+        Rpp:
+          x1 < x2 ⇒
+          return_variable_relational_1 < return_variable_relational_2;
   */
   return;
 }

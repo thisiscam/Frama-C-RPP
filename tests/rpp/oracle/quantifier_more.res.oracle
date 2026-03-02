@@ -11,7 +11,7 @@ axiomatic Relational_axiome_1 {
   
   lemma Relational_lemma_1{L}:
     ∀ int x, int y, int return_variable_relational_2,
-        int return_variable_relational_1;
+      int return_variable_relational_1;
       g_acsl_1(y, return_variable_relational_2) ⇒
       f_acsl_1(x, return_variable_relational_1) ⇒
       (∃ int a, int b, int c, int d;
@@ -19,7 +19,7 @@ axiomatic Relational_axiome_1 {
          (x ≡ a ⇒ d ≡ return_variable_relational_1) ∧
          (y ≡ b ⇒ c ≡ return_variable_relational_2));
   
-  }
+}
  */
 /*@ assigns \result;
     assigns \result \from x;
@@ -50,11 +50,11 @@ void relational_wrapper_1(int x, int y)
   return_variable_relational_1 = x;
   return_variable_relational_2 = y;
   /*@ check
-      Rpp:
-        ∃ int a, int b, int c, int d;
-          a > 10 ∧ b < 2 ∧ d > c ∧
-          (x ≡ a ⇒ d ≡ return_variable_relational_1) ∧
-          (y ≡ b ⇒ c ≡ return_variable_relational_2);
+        Rpp:
+          ∃ int a, int b, int c, int d;
+            a > 10 ∧ b < 2 ∧ d > c ∧
+            (x ≡ a ⇒ d ≡ return_variable_relational_1) ∧
+            (y ≡ b ⇒ c ≡ return_variable_relational_2);
   */
   return;
 }

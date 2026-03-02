@@ -13,7 +13,7 @@ axiomatic Relational_axiome_2 {
       h_acsl_2(x_id2, x_id2_pre, return_variable_relational_2) ⇒
       x_id2 ≡ 0 ⇒ return_variable_relational_2 ≡ 0;
   
-  }
+}
  */
 /*@
 axiomatic Relational_axiome_1 {
@@ -21,13 +21,12 @@ axiomatic Relational_axiome_1 {
   
   lemma Relational_lemma_1{L}:
     ∀ int return_variable_relational_1, int x_id1_pre,
-        int return_variable_relational_1_0;
+      int return_variable_relational_1_0;
       h_acsl_1(return_variable_relational_1, x_id1_pre,
               return_variable_relational_1_0) ⇒
-      return_variable_relational_1 ≡ 0 ⇒
-      return_variable_relational_1_0 ≡ 0;
+      return_variable_relational_1 ≡ 0 ⇒ return_variable_relational_1_0 ≡ 0;
   
-  }
+}
  */
 /*@ assigns \result;
     assigns \result \from x, b;
@@ -56,9 +55,9 @@ void relational_wrapper_1(int return_variable_relational_1)
     return_variable_relational_1_3 = __retres_1;
   }
   /*@ check
-      Rpp:
-        return_variable_relational_1 ≡ 0 ⇒
-        return_variable_relational_1_3 ≡ 0;
+        Rpp:
+          return_variable_relational_1 ≡ 0 ⇒
+          return_variable_relational_1_3 ≡ 0;
   */
   return;
 }

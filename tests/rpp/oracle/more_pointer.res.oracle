@@ -20,7 +20,7 @@ axiomatic Relational_axiome_1 {
       is_eq{post_id1, pre_id2}(x1, x2, 2) ⇒
       is_eq{pre_id1, post_id2}(x1, x2, 2);
   
-  }
+}
  */
 /*@ requires \valid(x + (0 .. 1));
     assigns *(x + (0 .. 1));

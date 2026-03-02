@@ -13,7 +13,7 @@ axiomatic Relational_axiome_3 {
       g_acsl_pure_3((int)(x1 + x2), y) ≡
       g_acsl_pure_3(x1, y) + g_acsl_pure_3(x2, y);
   
-  }
+}
  */
 /*@
 axiomatic Relational_axiome_2 {
@@ -22,7 +22,7 @@ axiomatic Relational_axiome_2 {
   lemma Relational_lemma_2{L}:
     ∀ int x, int y; x > 0 ⇒ g_acsl_pure_2(x, y) ≡ x * y;
   
-  }
+}
  */
 /*@
 axiomatic Relational_axiome_1 {
@@ -31,7 +31,7 @@ axiomatic Relational_axiome_1 {
   lemma Relational_lemma_1{L}:
     ∀ int x, int y; x ≤ 0 ⇒ g_acsl_pure_1(x, y) ≡ 0;
   
-  }
+}
  */
 /*@ requires y ≥ 0 ∧ x ≥ 0;
     assigns \result;
@@ -150,7 +150,7 @@ void relational_wrapper_3(int x1, int x2, int y)
   int return_variable_relational_3;
   int return_variable_relational_4;
   int return_variable_relational_5;
-  aux_local_variable_1 = x1 + x2;
+  aux_local_variable_1 = (int)(x1 + x2);
   /*@ assert Rpp: y ≥ 0 ∧ aux_local_variable_1 ≥ 0; */
   return_variable_relational_3 = g_aux_3(aux_local_variable_1,y);
   /*@ assert Rpp: y ≥ 0 ∧ x1 ≥ 0; */
@@ -158,10 +158,10 @@ void relational_wrapper_3(int x1, int x2, int y)
   /*@ assert Rpp: y ≥ 0 ∧ x2 ≥ 0; */
   return_variable_relational_5 = g_aux_3(x2,y);
   /*@ check
-      Rpp:
-        x1 > 0 ∧ x2 > 0 ⇒
-        return_variable_relational_3 ≡
-        return_variable_relational_4 + return_variable_relational_5;
+        Rpp:
+          x1 > 0 ∧ x2 > 0 ⇒
+          return_variable_relational_3 ≡
+          return_variable_relational_4 + return_variable_relational_5;
   */
   return;
 }

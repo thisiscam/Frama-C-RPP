@@ -16,7 +16,7 @@ axiomatic sum_axiomatic {
       sum(a, b, i, j, n, k + 1) ≡
       sum(a, b, i, j, n, k) + *(a + (i * n + k)) * *(b + (k * n + j));
   
-  }
+}
  */
 /*@
 axiomatic Relational_axiome_1 {
@@ -40,7 +40,7 @@ axiomatic Relational_axiome_1 {
       matrix_mult_acsl_1{pre_id1, post_id1}(a1, b1, c1, n) ⇒
       \at(*c1,post_id1) < \at(*c2,post_id2);
   
-  }
+}
  */
 /*@
 axiomatic Relational_axiome_2 {
@@ -54,7 +54,7 @@ axiomatic Relational_axiome_2 {
       matrix_mult_acsl_2{pre_id3, post_id3}(a1, b1, c1, n) ⇒
       \at(*c1,post_id3) < 0;
   
-  }
+}
  */
 /*@ requires \separated(a + (0 .. n * n - 1), c + (0 .. n * n - 1));
     requires \separated(b + (0 .. n * n - 1), c + (0 .. n * n - 1));
@@ -85,8 +85,7 @@ void matrix_mult(int *a, int *b, int *c, int n)
   /*@ loop invariant 0 ≤ i ≤ n;
       loop invariant
         ∀ ℤ k, ℤ j;
-          0 ≤ k < i ∧ 0 ≤ j < n ⇒
-          *(c + (k * n + j)) ≡ sum(a, b, k, j, n, n);
+          0 ≤ k < i ∧ 0 ≤ j < n ⇒ *(c + (k * n + j)) ≡ sum(a, b, k, j, n, n);
       loop assigns *(c + (0 .. n * n - 1)), i;
       loop variant n - i;
   */
@@ -95,8 +94,7 @@ void matrix_mult(int *a, int *b, int *c, int n)
       int j = 0;
       /*@ loop invariant 0 ≤ j ≤ n;
           loop invariant
-            ∀ ℤ k;
-              0 ≤ k < j ⇒ *(c + (i * n + k)) ≡ sum(a, b, i, k, n, n);
+            ∀ ℤ k; 0 ≤ k < j ⇒ *(c + (i * n + k)) ≡ sum(a, b, i, k, n, n);
           loop assigns *(c + (i * n .. (i * n + n) - 1)), j;
           loop variant n - j;
       */

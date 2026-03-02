@@ -9,15 +9,15 @@ axiomatic Relational_axiome_1 {
   predicate f_acsl_1(int x, int message_pre, int message_post) ;
   
   lemma Relational_lemma_1{L}:
-    ∀ int x1, int message_id3_pre, int message_id3_post,
-        int message_id2_pre, int message_id2_post;
+    ∀ int x1, int message_id3_pre, int message_id3_post, int message_id2_pre,
+      int message_id2_post;
       f_acsl_1((int)(x1 - 1), message_id3_pre, message_id3_post) ⇒
       f_acsl_1(x1, message_id2_pre, message_id2_post) ⇒
       x1 > 0 ⇒
       message_id2_pre ≡ message_id3_pre ⇒
       message_id2_post ≡ 1 + message_id3_post;
   
-  }
+}
  */
 /*@ ensures \old(x) ≤ 0 ⇒ \at(message,Post) ≡ \at(message,Pre);
     ensures \old(x) > 0 ⇒ \at(message,Pre) + \old(x) ≡ \at(message,Post);
@@ -38,8 +38,7 @@ void f(int x)
 
 int message_id3_1;
 
-/*@ ensures
-      \old(x) ≤ 0 ⇒ \at(message_id3_1,Post) ≡ \at(message_id3_1,Pre);
+/*@ ensures \old(x) ≤ 0 ⇒ \at(message_id3_1,Post) ≡ \at(message_id3_1,Pre);
     ensures
       \old(x) > 0 ⇒
       \at(message_id3_1,Pre) + \old(x) ≡ \at(message_id3_1,Post);
@@ -54,8 +53,7 @@ void f_id3(int x);
 
 int message_id2_1;
 
-/*@ ensures
-      \old(x) ≤ 0 ⇒ \at(message_id2_1,Post) ≡ \at(message_id2_1,Pre);
+/*@ ensures \old(x) ≤ 0 ⇒ \at(message_id2_1,Post) ≡ \at(message_id2_1,Pre);
     ensures
       \old(x) > 0 ⇒
       \at(message_id2_1,Pre) + \old(x) ≡ \at(message_id2_1,Post);
@@ -76,17 +74,17 @@ void relational_wrapper_1(int x1)
     message_id2_1 ++;
   }
   ;
-  aux_local_variable_1 = x1 - 1;
+  aux_local_variable_1 = (int)(x1 - 1);
   if (aux_local_variable_1 > 0) {
     f_id3(aux_local_variable_1 - 1);
     message_id3_1 ++;
   }
   ;
   /*@ check
-      Rpp:
-        x1 > 0 ⇒
-        \at(message_id2_1,Pre) ≡ \at(message_id3_1,Pre) ⇒
-        \at(message_id2_1,Here) ≡ 1 + \at(message_id3_1,Here);
+        Rpp:
+          x1 > 0 ⇒
+          \at(message_id2_1,Pre) ≡ \at(message_id3_1,Pre) ⇒
+          \at(message_id2_1,Here) ≡ 1 + \at(message_id3_1,Here);
   */
   return;
 }

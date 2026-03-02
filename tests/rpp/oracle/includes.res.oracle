@@ -13,7 +13,7 @@ axiomatic Relational_axiome_1 {
     ∀ unsigned int x1, unsigned int x2;
       x1 < x2 ⇒ f_acsl_pure_1(x1) < f_acsl_pure_1(x2);
   
-  }
+}
 
 */
 /*@ requires x_0 > 0;
@@ -38,7 +38,7 @@ axiomatic Relational_axiome_2 {
     ∀ uint8_t y_id1_pre, uint32_t return_variable_relational_1;
       g_acsl_2(y_id1_pre, return_variable_relational_1) ⇒ 0 ≡ 0;
   
-  }
+}
 
 */
 /*@ assigns \result;
@@ -50,7 +50,7 @@ axiomatic Relational_axiome_2 {
 uint32_t g(void)
 {
   uint32_t __retres;
-  __retres = (unsigned int)y;
+  __retres = (uint32_t)y;
   return __retres;
 }
 
@@ -63,7 +63,7 @@ axiomatic Relational_axiome_3 {
       k_acsl_3(y_id1_pre, return_variable_relational_2) ⇒
       return_variable_relational_2 ≡ 0;
   
-  }
+}
 
 */
 /*@ assigns \result;
@@ -75,7 +75,7 @@ axiomatic Relational_axiome_3 {
 uint32_t k(void)
 {
   uint32_t __retres;
-  __retres = (unsigned int)y;
+  __retres = (uint32_t)y;
   return __retres;
 }
 
@@ -90,7 +90,7 @@ axiomatic Relational_axiome_4 {
       h_acsl_4(x_id1, return_variable_relational_3) ⇒
       return_variable_relational_3 ≡ 0;
   
-  }
+}
 
 */
 /*@ assigns \result;
@@ -125,9 +125,9 @@ void relational_wrapper_1(unsigned int x1, unsigned int x2)
     return_variable_relational_2 = __retres_2;
   }
   /*@ check
-      Rpp:
-        x1 < x2 ⇒
-        return_variable_relational_1 < return_variable_relational_2;
+        Rpp:
+          x1 < x2 ⇒
+          return_variable_relational_1 < return_variable_relational_2;
   */
   return;
 }
@@ -139,7 +139,7 @@ void relational_wrapper_2(void)
   uint32_t return_variable_relational_3;
   {
     uint32_t __retres_3;
-    __retres_3 = (unsigned int)y_id1_2;
+    __retres_3 = (uint32_t)y_id1_2;
     return_variable_relational_3 = __retres_3;
   }
   /*@ check Rpp: 0 ≡ 0; */
@@ -153,7 +153,7 @@ void relational_wrapper_3(void)
   uint32_t return_variable_relational_4;
   {
     uint32_t __retres_4;
-    __retres_4 = (unsigned int)y_id1_3;
+    __retres_4 = (uint32_t)y_id1_3;
     return_variable_relational_4 = __retres_4;
   }
   /*@ check Rpp: return_variable_relational_4 ≡ 0; */

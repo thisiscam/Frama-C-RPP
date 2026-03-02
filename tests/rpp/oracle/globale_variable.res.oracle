@@ -14,7 +14,7 @@ axiomatic Relational_axiome_1 {
       h_acsl_1(y_id1_pre, y_id1_post) ⇒
       y_id1_pre < y_id2_pre ⇒ y_id1_post < y_id2_post;
   
-  }
+}
  */
 /*@ assigns y;
     assigns y \from y;
@@ -46,9 +46,9 @@ void relational_wrapper_1(void)
     ;
   }
   /*@ check
-      Rpp:
-        \at(y_id1_1,Pre) < \at(y_id2_1,Pre) ⇒
-        \at(y_id1_1,Here) < \at(y_id2_1,Here);
+        Rpp:
+          \at(y_id1_1,Pre) < \at(y_id2_1,Pre) ⇒
+          \at(y_id1_1,Here) < \at(y_id2_1,Here);
   */
   return;
 }

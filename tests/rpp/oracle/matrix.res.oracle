@@ -1,4 +1,6 @@
 [kernel] Parsing tests/rpp/matrix.c (with preprocessing)
+[kernel:parser:unnamed-typedef] tests/rpp/matrix.c:5: Warning: 
+  typedef without a name
 [rpp] ***************************************
 [rpp] Rpp start
 [rpp] ***************************************
@@ -16,7 +18,7 @@ axiomatic Relational_axiome_1 {
     ∀ struct matrix2 m;
       det_two_acsl_pure_1(m) ≡ det_two_acsl_pure_1(trans_acsl_pure_1(m));
   
-  }
+}
  */
 /*@ assigns \result;
     assigns \result \from m_t;
@@ -71,8 +73,7 @@ void relational_wrapper_1(struct matrix2 m)
                  local_variable_relational_1.t[1] * local_variable_relational_1.t[2];
     return_variable_relational_2 = __retres_3;
   }
-  /*@ check
-      Rpp: return_variable_relational_1 ≡ return_variable_relational_2;
+  /*@ check Rpp: return_variable_relational_1 ≡ return_variable_relational_2;
   */
   return;
 }

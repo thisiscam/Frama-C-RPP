@@ -12,7 +12,7 @@ axiomatic Relational_axiome_1 {
     ∀ int y_id1_pre, int return_variable_relational_1;
       g_acsl_1(y_id1_pre, return_variable_relational_1) ⇒ 0 ≡ 0;
   
-  }
+}
  */
 /*@ assigns \result;
     assigns \result \from y;
@@ -34,7 +34,7 @@ axiomatic Relational_axiome_2 {
       k_acsl_2(y_id1_pre, return_variable_relational_2) ⇒
       return_variable_relational_2 ≡ y_id1_pre;
   
-  }
+}
 
 */
 /*@ assigns \result;

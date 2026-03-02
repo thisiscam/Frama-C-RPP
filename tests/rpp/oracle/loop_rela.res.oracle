@@ -9,10 +9,9 @@ axiomatic Relational_axiome_1 {
   
   logic int f_acsl_pure_1(int n) ;
   
-  lemma Relational_lemma_1{L}:
-    ∀ int n; f_acsl_pure_1(n) ≡ g_acsl_pure_1(n);
+  lemma Relational_lemma_1{L}: ∀ int n; f_acsl_pure_1(n) ≡ g_acsl_pure_1(n);
   
-  }
+}
  */
 /*@ requires n ≥ 0;
     ensures \result ≡ (\old(n) * (\old(n) + 1)) / 2;
@@ -98,8 +97,7 @@ void relational_wrapper_1(int n)
     }
     return_variable_relational_2 = y_2;
   }
-  /*@ check
-      Rpp: return_variable_relational_1 ≡ return_variable_relational_2;
+  /*@ check Rpp: return_variable_relational_1 ≡ return_variable_relational_2;
   */
   return;
 }

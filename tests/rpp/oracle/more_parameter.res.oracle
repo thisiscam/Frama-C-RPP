@@ -15,7 +15,7 @@ axiomatic Relational_axiome_1 {
   lemma Relational_lemma_1{L}:
     ∀ struct s var; f_acsl_pure_1(var.s1) ≡ f_acsl_pure_1(var.s1);
   
-  }
+}
  */
 /*@ assigns \result;
     assigns \result \from x;
@@ -38,8 +38,7 @@ void relational_wrapper_1(struct s var)
   return_variable_relational_1 = aux_local_variable_1;
   aux_local_variable_2 = var.s1;
   return_variable_relational_2 = aux_local_variable_2;
-  /*@ check
-      Rpp: return_variable_relational_1 ≡ return_variable_relational_2;
+  /*@ check Rpp: return_variable_relational_1 ≡ return_variable_relational_2;
   */
   return;
 }
