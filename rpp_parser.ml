@@ -57,12 +57,19 @@ let rec is_safe_cast from_typ to_typ =
   | TFloat _, TFloat _ -> true      (* any float-to-float cast *)
   | TInt ik, TFloat fk ->
     (* Only allow when the integer's value range fits exactly in the float's
-       mantissa.  IEEE 754: FFloat has 24 significant bits, FDouble has 53,
-       FLongDouble has 64.  An N-bit integer requires N bits of mantissa. *)
-    let mantissa_bits = match fk with
-      | FFloat -> 24 | FDouble -> 53 | FLongDouble -> 64
+       significand.  Derive significand bits from the platform float size:
+         32-bit  (IEEE 754 single)  -> 24 significant bits
+         64-bit  (IEEE 754 double)  -> 53 significant bits
+         80-bit  (x87 extended)     -> 64 significant bits  (x86/x86-64)
+         128-bit (IEEE 754 quad)    -> 113 significant bits
+       On ARM64, long double is the same as double (64-bit/53-bit), so
+       Cil.bitsSizeOf returns 64 and the mapping gives 53, correctly
+       rejecting long long -> long double on that platform. *)
+    let float_sig_bits =
+      match Cil.bitsSizeOf {tnode = TFloat fk; tattr = []} with
+      | 32 -> 24 | 64 -> 53 | 80 -> 64 | 128 -> 113 | _ -> 0
     in
-    Cil.bitsSizeOfInt ik <= mantissa_bits
+    Cil.bitsSizeOfInt ik <= float_sig_bits
   | TPtr _, TPtr({tnode=TVoid; _}) -> true   (* T* to void* *)
   | TPtr({tnode=TVoid; _}), TPtr _ -> true   (* void* to T* *)
   | TNamed ti, _ -> is_safe_cast ti.ttype to_typ

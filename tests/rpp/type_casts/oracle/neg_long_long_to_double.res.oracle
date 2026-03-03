@@ -1,0 +1,8 @@
+[kernel] Parsing tests/rpp/type_casts/neg_long_long_to_double.c (with preprocessing)
+[kernel:annot-error] tests/rpp/type_casts/neg_long_long_to_double.c:14: Failure: 
+  Cast are not supported:
+   long long and double are not compatible for term 
+   a in call of id_double 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.
