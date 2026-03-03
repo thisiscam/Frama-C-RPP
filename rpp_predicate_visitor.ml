@@ -402,6 +402,28 @@ let typer func env formals =
                does not have original varinfo."
                       Printer.pp_logic_var l_v
         end
+      | TCast(_, Ctype _, {term_node = TLval(TVar(l_v), TNoOffset); _}) ->
+        (* Explicit ACSL cast around a simple variable reference.
+           Logic_to_c.term_to_exp cannot handle all such casts (e.g. enum->int),
+           so we extract the base variable and create an aux_cast_local just like
+           the implicit type-mismatch case above. *)
+        begin
+          match l_v.lv_origin with
+          | Some x ->
+            let name =
+              String.concat "_" ["aux_cast_local";
+                                 string_of_int (Rpp_options.Counting_aux_local_variable.next())]
+            in
+            let param_type = get_typ_in_current_project t env.self#behavior env.loc in
+            let cast_var = Cil.makeLocalVar env.new_funct name param_type in
+            let x_exp = Cil.new_exp ~loc:env.loc (Lval (Cil.var x)) in
+            (cast_var :: fq, Some(x_exp, cast_var, fh) :: eq)
+          | None ->
+            Rpp_options.Self.fatal ~source:(fst env.loc)
+              "Something went wrong: Logic variable @[%a@] \
+               does not have original varinfo."
+              Printer.pp_logic_var l_v
+        end
       | _ ->
         let name =
           String.concat "_" ["aux_local_variable";
