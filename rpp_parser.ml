@@ -47,11 +47,53 @@ let () =
 
 let id_hash = Hashtbl.create 3
 
+(** Check whether a cast from [from_typ] to [to_typ] is safe (well-defined). *)
+let rec is_safe_cast from_typ to_typ =
+  match from_typ.tnode, to_typ.tnode with
+  | TInt ik_from, TInt ik_to ->
+    (* Only allow non-narrowing: argument bit-width must not exceed parameter bit-width.
+       Narrowing casts (e.g. long -> short) are lossy and must be rejected. *)
+    Cil.bitsSizeOfInt ik_from <= Cil.bitsSizeOfInt ik_to
+  | TFloat fk_from, TFloat fk_to ->
+    (* Only allow non-narrowing float-to-float: float rank must not decrease.
+       Cil.frank: FFloat=1, FDouble=2, FLongDouble=3.
+       Narrowing (e.g. double -> float) is lossy and must be rejected. *)
+    Cil.frank fk_from <= Cil.frank fk_to
+  | TInt ik, TFloat fk ->
+    (* Only allow when the integer's value range fits exactly in the float's
+       significand.  Derive significand bits from the platform float size:
+         32-bit  (IEEE 754 single)  -> 24 significant bits
+         64-bit  (IEEE 754 double)  -> 53 significant bits
+         80-bit  (x87 extended)     -> 64 significant bits  (x86/x86-64)
+         128-bit (IEEE 754 quad)    -> 113 significant bits
+       On ARM64, long double is the same as double (64-bit/53-bit), so
+       Cil.bitsSizeOf returns 64 and the mapping gives 53, correctly
+       rejecting long long -> long double on that platform. *)
+    let float_sig_bits =
+      match Cil.bitsSizeOf {tnode = TFloat fk; tattr = []} with
+      | 32 -> 24 | 64 -> 53 | 80 -> 64 | 128 -> 113 | _ -> 0
+    in
+    Cil.bitsSizeOfInt ik <= float_sig_bits
+  | TPtr _, TPtr({tnode=TVoid; _}) -> true   (* T* to void* *)
+  | TPtr({tnode=TVoid; _}), TPtr _ -> true   (* void* to T* *)
+  | TEnum _, TInt _ -> true   (* enum to int: always safe (C11 6.4.4.3) *)
+  | TEnum _, TFloat fk ->
+    (* Enum values fit in int (C11 6.7.2.2); safe iff int fits in float's significand. *)
+    let float_sig_bits =
+      match Cil.bitsSizeOf {tnode = TFloat fk; tattr = []} with
+      | 32 -> 24 | 64 -> 53 | 80 -> 64 | 128 -> 113 | _ -> 0
+    in
+    Cil.bitsSizeOfInt IInt <= float_sig_bits
+  | TNamed ti, _ -> is_safe_cast ti.ttype to_typ
+  | _, TNamed ti -> is_safe_cast from_typ ti.ttype
+  | _ -> false
+
 let type_relational typing_context loc l =
 
   let function_parameter_check ctxt x t pred =
     match x.term_type with
     | Ctype(ty) -> if Cil_datatype.Typ.equal t ty then ()
+      else if is_safe_cast ty t then ()
       else
         let test = new Printer.extensible_printer () in
         ctxt.error loc "Cast are not supported:@. @[%a and %a are not compatible@] \

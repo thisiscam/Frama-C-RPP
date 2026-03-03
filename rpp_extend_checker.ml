@@ -21,6 +21,35 @@
 open Filecheck
 open Cil_types
 
+(** Check whether a cast from [from_typ] to [to_typ] is safe (well-defined). *)
+let rec is_safe_cast from_typ to_typ =
+  match from_typ.tnode, to_typ.tnode with
+  | TInt ik_from, TInt ik_to ->
+    (* Only allow non-narrowing: argument bit-width must not exceed parameter bit-width. *)
+    Cil.bitsSizeOfInt ik_from <= Cil.bitsSizeOfInt ik_to
+  | TFloat fk_from, TFloat fk_to ->
+    (* Only allow non-narrowing float-to-float: frank gives FFloat=1, FDouble=2, FLongDouble=3. *)
+    Cil.frank fk_from <= Cil.frank fk_to
+  | TInt ik, TFloat fk ->
+    let float_sig_bits =
+      match Cil.bitsSizeOf {tnode = TFloat fk; tattr = []} with
+      | 32 -> 24 | 64 -> 53 | 80 -> 64 | 128 -> 113 | _ -> 0
+    in
+    Cil.bitsSizeOfInt ik <= float_sig_bits
+  | TPtr _, TPtr({tnode=TVoid; _}) -> true
+  | TPtr({tnode=TVoid; _}), TPtr _ -> true
+  | TEnum _, TInt _ -> true   (* enum to int: always safe (C11 6.4.4.3) *)
+  | TEnum _, TFloat fk ->
+    (* Enum values fit in int (C11 6.7.2.2); safe iff int fits in float's significand. *)
+    let float_sig_bits =
+      match Cil.bitsSizeOf {tnode = TFloat fk; tattr = []} with
+      | 32 -> 24 | 64 -> 53 | 80 -> 64 | 128 -> 113 | _ -> 0
+    in
+    Cil.bitsSizeOfInt IInt <= float_sig_bits
+  | TNamed ti, _ -> is_safe_cast ti.ttype to_typ
+  | _, TNamed ti -> is_safe_cast from_typ ti.ttype
+  | _ -> false
+
 let fun_type_param p =
   match p.vtype.tnode with
   | TFun (_,Some t,_) -> t
@@ -66,6 +95,7 @@ let check_param_type param funct loc=
       match x.term_type with
       | Ctype(ty) ->
         if Cil_datatype.Typ.equal t ty then ()
+        else if is_safe_cast ty t then ()
         else
           Rpp_options.Self.fatal ~source:loc
             "Cast are not supported:@. @[%a and %a are not \
