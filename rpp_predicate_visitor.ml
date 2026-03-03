@@ -1317,9 +1317,12 @@ let predicate_visitor
     method build_predicate_label env l =
       List.map
         (function
-                | FormalLabel(id) ->
+          | FormalLabel(id) when
+              (match Str.bounded_split (Str.regexp "_") id 2 with
+               | "Pre" :: _ :: [] | "Post" :: _ :: [] -> true
+               | _ -> false) ->
             BuiltinLabel (id_convert id env.loc (!call_side_effect_data))
-          | _ -> assert false)
+          | label -> label)
         l
 
     method  build_predicate_app env logic_info l_assert t_list =
