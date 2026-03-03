@@ -1,0 +1,8 @@
+[kernel] Parsing tests/rpp/type_casts/neg_incompatible_ptrs.c (with preprocessing)
+[kernel:annot-error] tests/rpp/type_casts/neg_incompatible_ptrs.c:13: Failure: 
+  Cast are not supported:
+   int * and float * are not compatible for term 
+   p1 in call of identity_float_ptr 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

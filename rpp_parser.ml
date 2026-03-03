@@ -47,11 +47,24 @@ let () =
 
 let id_hash = Hashtbl.create 3
 
+(** Check whether a cast from [from_typ] to [to_typ] is safe (well-defined). *)
+let rec is_safe_cast from_typ to_typ =
+  match from_typ.tnode, to_typ.tnode with
+  | TInt _, TInt _ -> true          (* any integer-to-integer cast *)
+  | TFloat _, TFloat _ -> true      (* any float-to-float cast *)
+  | TInt _, TFloat _ -> true        (* integer to float (widening) *)
+  | TPtr _, TPtr({tnode=TVoid; _}) -> true   (* T* to void* *)
+  | TPtr({tnode=TVoid; _}), TPtr _ -> true   (* void* to T* *)
+  | TNamed ti, _ -> is_safe_cast ti.ttype to_typ
+  | _, TNamed ti -> is_safe_cast from_typ ti.ttype
+  | _ -> false
+
 let type_relational typing_context loc l =
 
   let function_parameter_check ctxt x t pred =
     match x.term_type with
     | Ctype(ty) -> if Cil_datatype.Typ.equal t ty then ()
+      else if is_safe_cast ty t then ()
       else
         let test = new Printer.extensible_printer () in
         ctxt.error loc "Cast are not supported:@. @[%a and %a are not compatible@] \

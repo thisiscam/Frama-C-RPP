@@ -21,6 +21,18 @@
 open Filecheck
 open Cil_types
 
+(** Check whether a cast from [from_typ] to [to_typ] is safe (well-defined). *)
+let rec is_safe_cast from_typ to_typ =
+  match from_typ.tnode, to_typ.tnode with
+  | TInt _, TInt _ -> true
+  | TFloat _, TFloat _ -> true
+  | TInt _, TFloat _ -> true
+  | TPtr _, TPtr({tnode=TVoid; _}) -> true
+  | TPtr({tnode=TVoid; _}), TPtr _ -> true
+  | TNamed ti, _ -> is_safe_cast ti.ttype to_typ
+  | _, TNamed ti -> is_safe_cast from_typ ti.ttype
+  | _ -> false
+
 let fun_type_param p =
   match p.vtype.tnode with
   | TFun (_,Some t,_) -> t
@@ -66,6 +78,7 @@ let check_param_type param funct loc=
       match x.term_type with
       | Ctype(ty) ->
         if Cil_datatype.Typ.equal t ty then ()
+        else if is_safe_cast ty t then ()
         else
           Rpp_options.Self.fatal ~source:loc
             "Cast are not supported:@. @[%a and %a are not \

@@ -1,0 +1,8 @@
+[kernel] Parsing tests/rpp/type_casts/neg_struct_incompatible.c (with preprocessing)
+[kernel:annot-error] tests/rpp/type_casts/neg_struct_incompatible.c:17: Failure: 
+  Cast are not supported:
+   struct bar * and struct foo * are not compatible for term 
+   p1 in call of get_foo 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.
