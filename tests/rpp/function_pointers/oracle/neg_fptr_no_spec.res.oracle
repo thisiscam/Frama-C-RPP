@@ -1,0 +1,7 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_no_spec.c (with preprocessing)
+[rpp] ***************************************
+[rpp] Rpp start
+[rpp] ***************************************
+[rpp] tests/rpp/function_pointers/neg_fptr_no_spec.c:20: User Error: 
+  The RPP require \assigns \from annotations for function apply
+[kernel] Plug-in rpp aborted: invalid user input.

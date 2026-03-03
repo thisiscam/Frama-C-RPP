@@ -46,6 +46,7 @@ class virtual ['self] rpp_visitor : object('self)
     build_call_valvar : 'b ->
     Cil_types.logic_var ->
     'g -> Cil_types.logic_type -> 'e;
+    build_call_addrof : 'b -> Cil_types.term -> 'e;
     build_callset : 'b -> 'f list -> 'h;
     build_predicate_and : 'b -> 'i -> 'i -> 'i;
     build_predicate_app : 'b -> Cil_types.logic_info -> 'j -> 'k list -> 'i;
@@ -263,6 +264,7 @@ class virtual ['self] rpp_visitor : object('self)
   method virtual build_call_valvar : 'b ->
     Cil_types.logic_var ->
     'g -> Cil_types.logic_type -> 'e
+  method virtual build_call_addrof : 'b -> Cil_types.term -> 'e
   method virtual build_callset : 'b -> 'f list -> 'h
   method virtual build_predicate_and : 'b -> 'i -> 'i -> 'i
   method virtual build_predicate_app : 'b -> Cil_types.logic_info -> 'j -> 'k list -> 'i

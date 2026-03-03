@@ -381,6 +381,21 @@ let predicate_visitor predicate self_behavior =
         quant_map := temp;
         data
 
+    method build_call_addrof env term =
+      (* Remap function varinfo from original project to new project *)
+      match term.term_node with
+      | TAddrOf(TVar(lv), off) ->
+        begin match lv.lv_origin with
+        | Some vi when (match vi.vtype.tnode with TFun _ -> true | _ -> false) ->
+          let new_vi = Visitor_behavior.Get.varinfo env.self_axiom#behavior vi in
+          if Cil_datatype.Varinfo.equal new_vi vi then term
+          else
+            let new_lv = Cil.cvar_to_lvar new_vi in
+            { term with term_node = TAddrOf(TVar(new_lv), off) }
+        | _ -> term
+        end
+      | _ -> term
+
     method build_call env id _ func formals =
       let data =
         Rpp_predicate_visitor.check_function_side_effect func env.loc_axiom

@@ -1,0 +1,7 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_struct_field_call.c (with preprocessing)
+[rpp] ***************************************
+[rpp] Rpp start
+[rpp] ***************************************
+[rpp] tests/rpp/function_pointers/neg_fptr_struct_field_call.c:36: User Error: 
+  Unsupported term in assigns of function apply_via_struct e.
+[kernel] Plug-in rpp aborted: invalid user input.

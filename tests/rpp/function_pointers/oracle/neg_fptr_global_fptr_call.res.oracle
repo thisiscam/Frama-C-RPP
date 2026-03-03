@@ -1,0 +1,7 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_global_fptr_call.c (with preprocessing)
+[rpp] ***************************************
+[rpp] Rpp start
+[rpp] ***************************************
+[rpp] tests/rpp/function_pointers/neg_fptr_global_fptr_call.c:29: User Error: 
+  Variable g_callback is not a paramter of function apply_global .
+[kernel] Plug-in rpp aborted: invalid user input.

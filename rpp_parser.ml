@@ -124,7 +124,21 @@ let type_relational typing_context loc l =
     | PLbinop _ -> ctxt.type_term ctxt env p (* binary operator. *)
     | PLdot _ -> ctxt.type_term ctxt env p (* field access ({t a.x}) *)
     | PLarrget _ -> ctxt.type_term ctxt env p (* array access. *)
+    | PLunop(Uamp, {lexpr_node = PLvar name; _}) ->
+      (* &function_name: build TAddrOf term directly to avoid label context
+         issues when FormalLabel labels are present in the environment *)
+      (try
+        let found = ctxt.find_var name in
+        match found.lv_origin with
+        | Some vi when (match vi.vtype.tnode with TFun _ -> true | _ -> false) ->
+          let lv = Cil.cvar_to_lvar vi in
+          let ptr_typ = Ctype(Cil_const.mk_typ (TPtr(vi.vtype))) in
+          Logic_const.term ~loc:p.lexpr_loc
+            (TAddrOf(TVar lv, TNoOffset)) ptr_typ
+        | _ -> ctxt.type_term ctxt env p
+      with _ -> ctxt.type_term ctxt env p)
     | PLunop _ -> ctxt.type_term ctxt env p (* unary operator. *)
+    | PLcast _ -> ctxt.type_term ctxt env p (* cast expression. *)
     | _ -> ctxt.error loc "Unsupported terme@. @[%a@] @.in parameter for function %s @."
              Logic_print.print_lexpr p f
   in

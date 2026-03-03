@@ -1,0 +1,7 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_callresult_bad_id.c (with preprocessing)
+[kernel:annot-error] tests/rpp/function_pointers/neg_fptr_callresult_bad_id.c:21: Failure: 
+  Expect an identifier as parameter for built-in \callresult: 
+   \callresult  (x1 + 1) 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

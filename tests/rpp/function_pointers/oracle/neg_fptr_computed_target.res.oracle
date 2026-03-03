@@ -1,0 +1,7 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_computed_target.c (with preprocessing)
+[rpp] ***************************************
+[rpp] Rpp start
+[rpp] ***************************************
+[rpp] tests/rpp/function_pointers/neg_fptr_computed_target.c:30: User Error: 
+  Error in predicate: term table has no quantifiers
+[kernel] Plug-in rpp aborted: invalid user input.

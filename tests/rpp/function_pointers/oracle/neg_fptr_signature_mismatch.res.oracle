@@ -1,0 +1,8 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_signature_mismatch.c (with preprocessing)
+[kernel:annot-error] tests/rpp/function_pointers/neg_fptr_signature_mismatch.c:22: Failure: 
+  Cast are not supported:
+   int (*)(int a, int b) and int (*)(int ) are not compatible for term 
+   &my_add in call of apply 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

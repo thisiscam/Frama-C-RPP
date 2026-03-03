@@ -36,8 +36,8 @@ let rec get_typ_in_current_project t self loc=
     let new_t = get_typ_in_current_project inner_t self loc in
     { t with tnode = TArray(new_t,e) }
   | TFun(_) ->
-    Rpp_options.Self.abort ~source:(fst loc)
-                  "Error in predicate: Function types are not supported yet"
+    (* Function pointer types: recursively handle the return/param types *)
+    t
   | TNamed (ti) -> let new_c = Visitor_behavior.Get.typeinfo self ti in { t with tnode = TNamed(new_c) }
   | TComp (c) -> let new_c = Visitor_behavior.Get.compinfo self c in { t with tnode = TComp(new_c) }
   | TEnum (e) -> let new_e = Visitor_behavior.Get.enuminfo self e in { t with tnode = TEnum(new_e) }
@@ -407,16 +407,60 @@ let typer func env formals =
           Cil.makeLocalVar env.new_funct name term_type
         in
         let exp = Logic_to_c.term_to_exp fh in
+        (* Remap function varinfos from original project to new project *)
+        let exp = match exp.enode with
+          | AddrOf(Var vi, NoOffset)
+            when (match vi.vtype.tnode with TFun _ -> true | _ -> false) ->
+            let new_vi = Visitor_behavior.Get.varinfo env.self#behavior vi in
+            if Cil_datatype.Varinfo.equal new_vi vi then exp
+            else Cil.new_exp ~loc:exp.eloc (AddrOf(Var new_vi, NoOffset))
+          | Lval(Var vi, NoOffset)
+            when (match vi.vtype.tnode with TFun _ -> true | _ -> false) ->
+            let new_vi = Visitor_behavior.Get.varinfo env.self#behavior vi in
+            if Cil_datatype.Varinfo.equal new_vi vi then exp
+            else Cil.new_exp ~loc:exp.eloc (Lval(Var new_vi, NoOffset))
+          | CastE(ty, {enode = AddrOf(Var vi, NoOffset); eloc; _})
+            when (match vi.vtype.tnode with TFun _ -> true | _ -> false) ->
+            let new_vi = Visitor_behavior.Get.varinfo env.self#behavior vi in
+            if Cil_datatype.Varinfo.equal new_vi vi then exp
+            else Cil.new_exp ~loc:exp.eloc
+                   (CastE(ty, Cil.new_exp ~loc:eloc (AddrOf(Var new_vi, NoOffset))))
+          | _ -> exp
+        in
         (assert_varinfo::fq,Some(exp,assert_varinfo,fh)::eq))
     ([],[]) formals args
 
-let inliner env inline_data data globals data_annot num proof =
+(** Extract target function varinfo from an expression like &func_name *)
+let extract_fptr_target (exp : Cil_types.exp) : Cil_types.varinfo option =
+  let is_fun vi = match vi.vtype.tnode with TFun _ -> true | _ -> false in
+  match exp.enode with
+  | AddrOf(Var vi, NoOffset) when is_fun vi -> Some vi
+  | Lval(Var vi, NoOffset) when is_fun vi -> Some vi
+  | CastE(_, {enode = AddrOf(Var vi, NoOffset); _}) when is_fun vi -> Some vi
+  | CastE(_, {enode = Lval(Var vi, NoOffset); _}) when is_fun vi -> Some vi
+  | _ -> None
+
+(** Build a mapping from function pointer local variables to their concrete
+    target functions, based on typer output *)
+let build_fptr_targets func_formals new_exp =
+  List.fold_left2 (fun acc vi exp_opt ->
+    match exp_opt with
+    | Some (exp, _, _) ->
+      begin match extract_fptr_target exp with
+      | Some target_vi -> Cil_datatype.Varinfo.Map.add vi target_vi acc
+      | None -> acc
+      end
+    | None -> acc
+  ) Cil_datatype.Varinfo.Map.empty func_formals new_exp
+
+let inliner env inline_data data globals data_annot num proof fptr_targets =
 
   Queue.add(fun () ->
       (* Get the body of the function and add it to the wrapper function*)
       let bodie =
         Rpp_generator.do_one_copy
           ~proof:proof
+          ~fptr_targets:fptr_targets
           inline_data.kf  (inline_data.formals) (inline_data.return_option)
           (inline_data.locals) (inline_data.id_option)
           data (inline_data.inlining)
@@ -539,6 +583,9 @@ class separate_checker loc terms id = object(_)
 
   method! vterm t =
     match t.term_type with
+    | Ctype({tnode = TPtr({tnode = TFun _; _}); _}) ->
+      (* Function pointers are constants (addresses); safe to share across traces *)
+      Cil.DoChildren
     | Ctype({tnode = TPtr _; _}) ->
       List.iter (fun x ->
           match Cil_datatype.Term.equal x t with
@@ -643,6 +690,21 @@ let predicate_visitor
       quant_map := temp;
       data
 
+    method build_call_addrof env term =
+      (* Remap function varinfo from original project to new project *)
+      match term.term_node with
+      | TAddrOf(TVar(lv), off) ->
+        begin match lv.lv_origin with
+        | Some vi when (match vi.vtype.tnode with TFun _ -> true | _ -> false) ->
+          let new_vi = Visitor_behavior.Get.varinfo env.self#behavior vi in
+          if Cil_datatype.Varinfo.equal new_vi vi then term
+          else
+            let new_lv = Cil.cvar_to_lvar new_vi in
+            { term with term_node = TAddrOf(TVar(new_lv), off) }
+        | _ -> term
+        end
+      | _ -> term
+
     method build_call env id inline func formals =
       let data = check_function_side_effect func env.loc in
       let (func_formals,new_exp) =
@@ -732,10 +794,11 @@ let predicate_visitor
       }
       in
       call_side_effect_data := data :: !call_side_effect_data;
+      let fptr_targets = build_fptr_targets func_formals new_exp in
       inliner env inline_data
         (data.froms_map,data.assigns_map,data.froms_map_p,data.assigns_map_p)
         (new_assigns_list@new_from_list@new_assigns_p_list@new_froms_p_list)
-        data_annot num env.proof;
+        data_annot num env.proof fptr_targets;
 
     method  build_callset _ _ = ()
 
@@ -793,8 +856,9 @@ let predicate_visitor
           (logic_var.lv_type)
       in
       let map = Cil_datatype.Varinfo.Map.empty in
+      let fptr_targets = build_fptr_targets func_formals new_exp in
       inliner env inline_data
-        (map,map,map,map) [] data_annot num env.proof;
+        (map,map,map,map) [] data_annot num env.proof fptr_targets;
       new_term_assert
 
 

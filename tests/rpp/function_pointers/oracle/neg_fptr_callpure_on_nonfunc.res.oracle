@@ -1,0 +1,7 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_callpure_on_nonfunc.c (with preprocessing)
+[kernel:annot-error] tests/rpp/function_pointers/neg_fptr_callpure_on_nonfunc.c:10: Failure: 
+  Expected a C function: 
+  global_x 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

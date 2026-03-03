@@ -322,7 +322,7 @@ class aux_visitor_3 vis_beh l_v_list ?(quan=[]) ?(pre=[]) formal_map = object(_)
       end
 
     | Prel _ | Pseparated _ | Pvalid _
-    | Pvalid_read _ |Pnot _ | Pimplies _ -> DoChildren
+    | Pvalid_read _ | Pvalid_function _ | Pnot _ | Pimplies _ -> DoChildren
 
     | _ -> Rpp_options.Self.abort
              "Unsupported predicate in requires clause:@. @[%a@] @."
@@ -363,7 +363,13 @@ class aux_visitor_3 vis_beh l_v_list ?(quan=[]) ?(pre=[]) formal_map = object(_)
     in
     match Str.bounded_split (Str.regexp "_") (l.lv_name) 4 with
     | "local" :: "variable" :: "relational" :: _ -> raise Local_return
-    | _ ->  aux l l_v_list
+    | _ ->
+      (* Allow references to function names (e.g., from &func_name in
+         function pointer arguments substituted into requires clauses) *)
+      match l.lv_origin with
+      | Some vi when (match vi.vtype.tnode with TFun _ -> true | _ -> false) ->
+        DoChildren
+      | _ -> aux l l_v_list
 end
 
 let do_one_require_vis self new_funct globals formal_map kf requires =
@@ -834,7 +840,7 @@ let do_one_behavior_vis kf formalsi id global_map self annot =
   in
   terms
 
-class aux_visitor_4 vis current add_global id global_map proj annot_data loc num =
+class aux_visitor_4 vis current add_global id global_map proj annot_data loc num fptr_targets =
   object(self)
     inherit Visitor.generic_frama_c_visitor (vis#behavior)
 
@@ -965,40 +971,58 @@ class aux_visitor_4 vis current add_global id global_map proj annot_data loc num
           Cil_datatype.Varinfo.equal v vo
         end
 
+    method private handle_direct_call return v expl l s =
+      let rename =
+        self#is_inlined v
+      in
+      match id with
+      | Some id ->
+        let name =
+          String.concat "_" [v.vname;id]
+        in
+        let new_s =
+          self#replace_func
+            (Some id) v rename expl return l s name
+        in
+        Cil.ChangeDoChildrenPost(new_s, fun x->x)
+
+      | None ->
+        let name =
+          String.concat "_"
+            [v.vname;"aux";string_of_int num]
+        in
+        let new_s =
+          self#replace_func
+            None v rename expl return l s name
+        in
+        Cil.ChangeDoChildrenPost(new_s, fun x->x)
+
     method! vstmt_aux s =
       match s.skind with
       | Instr(Call(return,Var(v),expl,l)) ->
-        begin
-          let rename =
-            self#is_inlined v
+        self#handle_direct_call return v expl l s
+      | Instr(Call(return,Mem(e),expl,l)) ->
+        (* Try to resolve the function pointer to a concrete target *)
+        let target_opt = match e.enode with
+          | Lval(Var fptr_vi, NoOffset) ->
+            Cil_datatype.Varinfo.Map.find_opt fptr_vi fptr_targets
+          | _ -> None
+        in
+        begin match target_opt with
+        | Some target_vi ->
+          (* Map the target from original project to new project *)
+          let mapped_vi =
+            Visitor_behavior.Get.varinfo vis#behavior target_vi
           in
-          match id with
-          | Some id ->
-            let name =
-              String.concat "_" [v.vname;id]
-            in
-            let new_s =
-              self#replace_func
-                (Some id) v rename expl return l s name
-            in
-            Cil.ChangeDoChildrenPost(new_s, fun x->x)
-
-          | None ->
-            let name =
-              String.concat "_"
-                [v.vname;"aux";string_of_int num]
-            in
-            let new_s =
-              self#replace_func
-                None v rename expl return l s name
-            in
-            Cil.ChangeDoChildrenPost(new_s, fun x->x)
+          self#handle_direct_call return mapped_vi expl l s
+        | None ->
+          let (src, _) = loc in
+          Rpp_options.Self.abort ~source:src
+            "Indirect call through function pointer could not be resolved.@ \
+             Ensure the function pointer argument is a concrete function address@ \
+             (e.g., &func_name) and the callee has a /*@@ calls ...; */ annotation: %a @."
+            Printer.pp_stmt s
         end
-      | Instr(Call _) ->
-        let (l,_) = loc in
-        Rpp_options.Self.abort ~source:l
-          "Function pointers are not supported: %a @."
-          Printer.pp_stmt s
       | _ -> Cil.ChangeDoChildrenPost(s,fun x->x)
   end
 
@@ -1119,8 +1143,9 @@ let rec get_typ_in_current_project t self loc=
   | TArray(inner,e) ->
     let new_t = get_typ_in_current_project inner self loc in
     Cil_const.mk_typ ~tattr:t.tattr (TArray(new_t,e))
-  | TFun(_) ->  Rpp_options.Self.abort ~source:loc
-                  "Error in predicate: Function types are not supported yet"
+  | TFun(_) ->
+    (* Function pointer types: keep as-is *)
+    t
   | TNamed (ti) ->
     let new_c = Visitor_behavior.Get.typeinfo self ti in
     Cil_const.mk_typ ~tattr:t.tattr (TNamed(new_c))
@@ -1316,10 +1341,9 @@ let inliner self proj funct id global_map = object (_)
             Cil.DoChildrenPost(fun _ -> Cil.mkStmt ~valid_sid:true (Block inline_body))
           end
       end
-    | Instr(Call(_)) ->
-      Rpp_options.Self.warning ~current:true
-        "Function pointer are not\
-         supported:@ @[%a@] @." Printer.pp_stmt stmt;
+    | Instr(Call(_, Mem _, _, _)) ->
+      (* Indirect call through function pointer: skip inlining.
+         Will be resolved to a direct call by aux_visitor_4. *)
       Cil.DoChildren
 
     | _ -> Cil.DoChildren
@@ -1354,13 +1378,14 @@ let no_inline resi self kf l formalsi proof id global_map proj annot_data num =
           let funct_vis = new aux_visitor_4
             self None self#add_new_global
             id global_map proj annot_data l num
+            Cil_datatype.Varinfo.Map.empty
           in
           Visitor.visitFramacBlock funct_vis b
         end
       else
         b
 
-let do_inline self kf new_funct resi funct proj locals formalsi global_map id proof n l num annot_data =
+let do_inline self kf new_funct resi funct proj locals formalsi global_map id proof n l num annot_data fptr_targets =
       let f p =
         (*Save the current new kf and make a binding with the wrapper
           function for code annotation generation*)
@@ -1411,6 +1436,7 @@ let do_inline self kf new_funct resi funct proj locals formalsi global_map id pr
             self (Some kf)
             self#add_new_global
             id global_map proj annot_data l num
+            fptr_targets
           in
           funct_vis#set_current_func new_funct;
           funct_vis#set_current_kf (Globals.Functions.get (new_funct.svar));
@@ -1423,7 +1449,7 @@ let do_inline self kf new_funct resi funct proj locals formalsi global_map id pr
 (**
    Function for making one copy of the body of kf
 *)
-let do_one_copy ?(proof=false) kf formalsi resi locals id global_map inline new_funct self proj l annot_data num =
+let do_one_copy ?(proof=false) ?(fptr_targets=Cil_datatype.Varinfo.Map.empty) kf formalsi resi locals id global_map inline new_funct self proj l annot_data num =
   match Kernel_function.get_definition kf with
   | exception _ -> no_inline resi self kf l formalsi proof id global_map proj annot_data num
   | funct ->
@@ -1433,5 +1459,5 @@ let do_one_copy ?(proof=false) kf formalsi resi locals id global_map inline new_
         no_inline resi self kf l formalsi proof id global_map proj annot_data num
       | n ->
         do_inline self kf new_funct resi funct proj locals
-          formalsi global_map id proof n l num annot_data
+          formalsi global_map id proof n l num annot_data fptr_targets
     end

@@ -1,0 +1,8 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_addr_of_variable.c (with preprocessing)
+[kernel:annot-error] tests/rpp/function_pointers/neg_fptr_addr_of_variable.c:24: Failure: 
+  Cast are not supported:
+   int * and int (*)(int ) are not compatible for term 
+   &global_var in call of apply 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

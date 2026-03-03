@@ -1,0 +1,7 @@
+[kernel] Parsing tests/rpp/function_pointers/neg_fptr_callset_non_call.c (with preprocessing)
+[kernel:annot-error] tests/rpp/function_pointers/neg_fptr_callset_non_call.c:21: Failure: 
+  Unsupported terme type in \callset built-in: 
+   x1 + x2 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.
