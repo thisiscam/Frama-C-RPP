@@ -50,7 +50,10 @@ let id_hash = Hashtbl.create 3
 (** Check whether a cast from [from_typ] to [to_typ] is safe (well-defined). *)
 let rec is_safe_cast from_typ to_typ =
   match from_typ.tnode, to_typ.tnode with
-  | TInt _, TInt _ -> true          (* any integer-to-integer cast *)
+  | TInt ik_from, TInt ik_to ->
+    (* Only allow non-narrowing: argument bit-width must not exceed parameter bit-width.
+       Narrowing casts (e.g. long -> short) are lossy and must be rejected. *)
+    Cil.bitsSizeOfInt ik_from <= Cil.bitsSizeOfInt ik_to
   | TFloat _, TFloat _ -> true      (* any float-to-float cast *)
   | TInt _, TFloat _ -> true        (* integer to float (widening) *)
   | TPtr _, TPtr({tnode=TVoid; _}) -> true   (* T* to void* *)

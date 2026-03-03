@@ -24,7 +24,9 @@ open Cil_types
 (** Check whether a cast from [from_typ] to [to_typ] is safe (well-defined). *)
 let rec is_safe_cast from_typ to_typ =
   match from_typ.tnode, to_typ.tnode with
-  | TInt _, TInt _ -> true
+  | TInt ik_from, TInt ik_to ->
+    (* Only allow non-narrowing: argument bit-width must not exceed parameter bit-width. *)
+    Cil.bitsSizeOfInt ik_from <= Cil.bitsSizeOfInt ik_to
   | TFloat _, TFloat _ -> true
   | TInt _, TFloat _ -> true
   | TPtr _, TPtr({tnode=TVoid; _}) -> true
