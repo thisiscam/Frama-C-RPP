@@ -1,0 +1,8 @@
+[kernel] Parsing tests/rpp/type_casts/neg_int_to_float_lossy.c (with preprocessing)
+[kernel:annot-error] tests/rpp/type_casts/neg_int_to_float_lossy.c:14: Failure: 
+  Cast are not supported:
+   int and float are not compatible for term 
+   a in call of id_float 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

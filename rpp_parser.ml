@@ -55,7 +55,14 @@ let rec is_safe_cast from_typ to_typ =
        Narrowing casts (e.g. long -> short) are lossy and must be rejected. *)
     Cil.bitsSizeOfInt ik_from <= Cil.bitsSizeOfInt ik_to
   | TFloat _, TFloat _ -> true      (* any float-to-float cast *)
-  | TInt _, TFloat _ -> true        (* integer to float (widening) *)
+  | TInt ik, TFloat fk ->
+    (* Only allow when the integer's value range fits exactly in the float's
+       mantissa.  IEEE 754: FFloat has 24 significant bits, FDouble has 53,
+       FLongDouble has 64.  An N-bit integer requires N bits of mantissa. *)
+    let mantissa_bits = match fk with
+      | FFloat -> 24 | FDouble -> 53 | FLongDouble -> 64
+    in
+    Cil.bitsSizeOfInt ik <= mantissa_bits
   | TPtr _, TPtr({tnode=TVoid; _}) -> true   (* T* to void* *)
   | TPtr({tnode=TVoid; _}), TPtr _ -> true   (* void* to T* *)
   | TNamed ti, _ -> is_safe_cast ti.ttype to_typ

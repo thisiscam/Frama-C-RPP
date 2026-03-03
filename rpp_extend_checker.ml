@@ -28,7 +28,11 @@ let rec is_safe_cast from_typ to_typ =
     (* Only allow non-narrowing: argument bit-width must not exceed parameter bit-width. *)
     Cil.bitsSizeOfInt ik_from <= Cil.bitsSizeOfInt ik_to
   | TFloat _, TFloat _ -> true
-  | TInt _, TFloat _ -> true
+  | TInt ik, TFloat fk ->
+    let mantissa_bits = match fk with
+      | FFloat -> 24 | FDouble -> 53 | FLongDouble -> 64
+    in
+    Cil.bitsSizeOfInt ik <= mantissa_bits
   | TPtr _, TPtr({tnode=TVoid; _}) -> true
   | TPtr({tnode=TVoid; _}), TPtr _ -> true
   | TNamed ti, _ -> is_safe_cast ti.ttype to_typ
