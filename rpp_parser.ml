@@ -54,7 +54,11 @@ let rec is_safe_cast from_typ to_typ =
     (* Only allow non-narrowing: argument bit-width must not exceed parameter bit-width.
        Narrowing casts (e.g. long -> short) are lossy and must be rejected. *)
     Cil.bitsSizeOfInt ik_from <= Cil.bitsSizeOfInt ik_to
-  | TFloat _, TFloat _ -> true      (* any float-to-float cast *)
+  | TFloat fk_from, TFloat fk_to ->
+    (* Only allow non-narrowing float-to-float: float rank must not decrease.
+       Cil.frank: FFloat=1, FDouble=2, FLongDouble=3.
+       Narrowing (e.g. double -> float) is lossy and must be rejected. *)
+    Cil.frank fk_from <= Cil.frank fk_to
   | TInt ik, TFloat fk ->
     (* Only allow when the integer's value range fits exactly in the float's
        significand.  Derive significand bits from the platform float size:

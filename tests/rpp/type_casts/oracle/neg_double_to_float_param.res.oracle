@@ -1,0 +1,8 @@
+[kernel] Parsing tests/rpp/type_casts/neg_double_to_float_param.c (with preprocessing)
+[kernel:annot-error] tests/rpp/type_casts/neg_double_to_float_param.c:14: Failure: 
+  Cast are not supported:
+   double and float are not compatible for term 
+   a in call of id_float2 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

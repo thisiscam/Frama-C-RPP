@@ -27,7 +27,9 @@ let rec is_safe_cast from_typ to_typ =
   | TInt ik_from, TInt ik_to ->
     (* Only allow non-narrowing: argument bit-width must not exceed parameter bit-width. *)
     Cil.bitsSizeOfInt ik_from <= Cil.bitsSizeOfInt ik_to
-  | TFloat _, TFloat _ -> true
+  | TFloat fk_from, TFloat fk_to ->
+    (* Only allow non-narrowing float-to-float: frank gives FFloat=1, FDouble=2, FLongDouble=3. *)
+    Cil.frank fk_from <= Cil.frank fk_to
   | TInt ik, TFloat fk ->
     let float_sig_bits =
       match Cil.bitsSizeOf {tnode = TFloat fk; tattr = []} with
