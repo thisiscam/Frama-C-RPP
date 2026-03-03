@@ -66,6 +66,12 @@ let check_is_pure_function kf loc =
   let rec aux data =
     match data  with
     | x :: y  ->
+      if not (Cil.is_default_behavior x) then
+        (* Skip user-defined named behaviors: their assigns are inherited
+           from the default behavior per ACSL semantics, so only the
+           default behavior matters for the purity check. *)
+        aux y
+      else
       (match x.b_assigns with
        | Writes([])-> Rpp_options.Self.abort ~source:loc
            "The \\callpure for function %s require that %s is pure i.e. assigns result from formals"
