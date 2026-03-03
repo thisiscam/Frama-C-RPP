@@ -681,6 +681,20 @@ let predicate_visitor predicate self_behavior =
           "Something went wrong during parsing: \
            \\at has an unsupported label %s" label
 
+    method  build_term_valme_at env new_t new_off ty _label =
+      let typ = match ty with
+        | Ctype t ->
+          Ctype(Rpp_predicate_visitor.get_typ_in_current_project
+                  t (env.self_axiom#behavior) (env.loc_axiom))
+        | Linteger -> Linteger
+        | Lreal -> Lreal
+        | _ ->
+          Rpp_options.Self.fatal ~source:(fst env.loc_axiom)
+            "Match bad term type in TMem at term"
+      in
+      let the_terme_node_axiome = TLval(TMem(new_t),new_off) in
+      Logic_const.term ~loc:env.loc_axiom the_terme_node_axiome typ
+
     method  build_Toffset_at env off _ = self#build_Toffset env off
 
     method build_term_binop env binop term1_axiome term2_axiome ty =
@@ -873,7 +887,7 @@ let predicate_visitor predicate self_behavior =
           "Something went wrong during parsing: \
            \\at has an unsupported label %s" s
 
-    method  build_term_at_mem env t s ty =
+    method  build_term_at_mem env t off s ty =
       match Str.bounded_split (Str.regexp "_") s 2 with
       | "Pre":: id :: [] ->
         let typ = match ty with
@@ -885,7 +899,7 @@ let predicate_visitor predicate self_behavior =
             Rpp_options.Self.fatal ~source:(fst env.loc_axiom)
               "Match bad term type in term variable"
         in
-        let the_terme_node_axiome = TLval(TMem(t),TNoOffset) in
+        let the_terme_node_axiome = TLval(TMem(t),off) in
         let axiom_term =
           Logic_const.term ~loc:env.loc_axiom the_terme_node_axiome typ
         in
@@ -906,7 +920,7 @@ let predicate_visitor predicate self_behavior =
             Rpp_options.Self.fatal ~source:(fst env.loc_axiom)
               "Match bad term type in term variable"
         in
-        let the_terme_node_axiome = TLval(TMem(t),TNoOffset) in
+        let the_terme_node_axiome = TLval(TMem(t),off) in
         let axiom_term =
           Logic_const.term ~loc:env.loc_axiom the_terme_node_axiome typ
         in

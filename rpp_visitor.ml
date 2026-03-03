@@ -20,36 +20,47 @@
 
 open Cil_types
 
+let rec extract_base_lvar_from t =
+  match t.term_node with
+  | TLval(TVar(lv),TNoOffset) -> Some lv
+  | TLval(TMem(inner),_) -> extract_base_lvar_from inner
+  | TBinOp(PlusPI,base,_) -> extract_base_lvar_from base
+  | _ -> None
+
 let check_result_from_formals kf loc af =
   let formals = Globals.Functions.get_params kf in
+  let check_lv_is_formal lv =
+    let is_formal =
+      List.exists (fun v ->
+          match v.vlogic_var_assoc with
+          | Some x -> Cil_datatype.Logic_var.equal lv x
+          | _ -> Rpp_options.Self.abort ~source:loc
+                   "Variable %a have no vlogic_var_assocf in assert clause of function %s."
+                   Printer.pp_varinfo v (Kernel_function.get_name kf)
+        ) formals
+    in
+    match is_formal with
+    | true -> ()
+    | false ->
+      Rpp_options.Self.abort ~source:loc
+        "Variable %a is not a paramter of function %s ."
+        Printer.pp_logic_var lv (Kernel_function.get_name kf)
+  in
   match af with
   | {it_content = {term_node = TLval(TResult(_),_); _}; _}, From(l) ->
     List.iter (
       fun x ->
         match x with
-        | {it_content =
-             {term_node = TLval(TMem({term_node = TLval(TVar(lv),TNoOffset); _}),TNoOffset); _}; _}
-        | {it_content =
-             {term_node = TLval(TMem({term_node =
-                                        TBinOp(PlusPI,{term_node = TLval(TVar(lv),TNoOffset); _},
-                                               {term_node = Trange(_,_); _}); _}),TNoOffset); _}; _}
         | {it_content = {term_node = TLval(TVar(lv),_); _}; _} ->
+          check_lv_is_formal lv
+        | {it_content = {term_node = TLval(TMem(inner),_); _}; _} ->
           begin
-            let is_formal =
-              List.exists (fun v ->
-                  match v.vlogic_var_assoc with
-                  | Some x -> Cil_datatype.Logic_var.equal lv x
-                  | _ -> Rpp_options.Self.abort ~source:loc
-                           "Variable %a have no vlogic_var_assocf in assert clause of function %s."
-                           Printer.pp_varinfo v (Kernel_function.get_name kf)
-                ) formals
-            in
-            match is_formal with
-            | true -> ()
-            | false ->
+            match extract_base_lvar_from inner with
+            | Some lv -> check_lv_is_formal lv
+            | None ->
               Rpp_options.Self.abort ~source:loc
-                "Variable %a is not a paramter of function %s ."
-                Printer.pp_logic_var lv (Kernel_function.get_name kf)
+                "Unsupported term in assigns of function %s e."
+                (Kernel_function.get_name kf)
           end
         | _ -> Rpp_options.Self.abort ~source:loc
                  "Unsupported term in assigns of function %s e."
@@ -183,6 +194,7 @@ class virtual ['a] rpp_visitor = object (self:'a)
   method virtual build_term_logic_coerce_at : _
   method virtual build_term_const_at : _
   method virtual build_term_valvar_at : _
+  method virtual build_term_valme_at : _
   method virtual build_Toffset_at : _
 
   method visit_term_binop_at env oper t1 t2 ty s =
@@ -201,6 +213,11 @@ class virtual ['a] rpp_visitor = object (self:'a)
     let new_offset = self#build_Toffset_at env t_o s in
     self#build_term_valvar_at env l_v new_offset ty s
 
+  method visit_term_valme_at env t off ty s =
+    let new_t = self#visit_term_at env t s in
+    let new_off = self#build_Toffset_at env off s in
+    self#build_term_valme_at env new_t new_off ty s
+
   method visit_term_at env term label =
     let (loc,_) = term.term_loc in
     match term.term_node with
@@ -212,6 +229,8 @@ class virtual ['a] rpp_visitor = object (self:'a)
                         Printer.pp_term term
     | TLval (TVar(logic_var),t_o) ->
       self#visit_term_valvar_at env logic_var t_o (term.term_type) label
+    | TLval (TMem(t),off) ->
+      self#visit_term_valme_at env t off (term.term_type) label
     | TConst ((Integer(_,_)) as l_g) | TConst((LReal(_)) as l_g) ->
       self#visit_term_const_at env l_g (term.term_type) label
     | TConst(_) -> Rpp_options.Self.abort ~source:loc "Unsupported logical constant:@. @[%a@] @."
@@ -262,9 +281,10 @@ class virtual ['a] rpp_visitor = object (self:'a)
     let new_offset = self#build_Toffset env x in
     self#build_term_at_var env l_v new_offset s ty
 
-  method visit_term_at_mem env t s ty =
+  method visit_term_at_mem env t off s ty =
     let new_term = self#visit_term_at env t s in
-    self#build_term_at_mem env new_term s ty
+    let new_off = self#build_Toffset env off in
+    self#build_term_at_mem env new_term new_off s ty
 
   method visit_term_unop env unop t ty =
     let new_t = self#visit_term env t in
@@ -351,8 +371,8 @@ class virtual ['a] rpp_visitor = object (self:'a)
       self#visit_term_app env logicinfo t_list (term.term_type)
     | Tat({term_node = TLval(TVar(l_v),x); _},FormalLabel(s)) ->
       self#visit_term_at_val env l_v x s (term.term_type)
-    | Tat({term_node = TLval(TMem(t),TNoOffset); _},FormalLabel(s)) ->
-      self#visit_term_at_mem env t s (term.term_type)
+    | Tat({term_node = TLval(TMem(t),off); _},FormalLabel(s)) ->
+      self#visit_term_at_mem env t off s (term.term_type)
     | TUnOp(Neg as op,t) ->
       self#visit_term_unop env op t (term.term_type)
     | TUnOp(_,_) -> Rpp_options.Self.abort ~source:loc

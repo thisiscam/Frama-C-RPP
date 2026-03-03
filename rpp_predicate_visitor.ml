@@ -138,29 +138,42 @@ type side_effect = {
 *)
 let check_function_side_effect funct loc =
   let kf = Globals.Functions.get funct in
+  let rec extract_base_lvar t =
+    match t.term_node with
+    | TLval(TVar(l_v),TNoOffset) -> Some l_v
+    | TLval(TMem(inner),_) -> extract_base_lvar inner
+    | TBinOp(PlusPI,base,_) -> extract_base_lvar base
+    | _ -> None
+  in
   let rec sort_pointer l acc acc_p =
     match l with
     | [] -> (acc, acc_p)
     | h :: q ->
       begin
         match h.term_node with
-        | TLval(TMem({term_node =
-                        TBinOp(PlusPI,{term_node = TLval(TVar(l_v),TNoOffset); _},
-                               {term_node = Trange(_,_); _}); _}),TNoOffset)
-        | TLval(TMem({term_node = TLval(TVar(l_v),TNoOffset); _}),TNoOffset) ->
+        | TLval(TMem(inner),_) ->
           begin
-            match l_v.lv_origin with
-            | Some v ->
+            match extract_base_lvar inner with
+            | Some l_v ->
               begin
-                match  Globals.Vars.find v with
-                | exception Not_found -> sort_pointer q acc ((h,v)::acc_p)
-                | _ -> sort_pointer q ((h,v)::acc) acc_p
+                match l_v.lv_origin with
+                | Some v ->
+                  begin
+                    match  Globals.Vars.find v with
+                    | exception Not_found -> sort_pointer q acc ((h,v)::acc_p)
+                    | _ -> sort_pointer q ((h,v)::acc) acc_p
+                  end
+                | None ->
+                  Rpp_options.Self.abort ~source:(fst loc)
+                    "Unsupported parameter in \\assigns \\from \
+                              annotation (not varinfo): @. @[%a@] @."
+                             Printer.pp_logic_var l_v
               end
             | None ->
-              Rpp_options.Self.abort ~source:(fst loc)
-                "Unsupported parameter in \\assigns \\from \
-                          annotation (not varinfo): @. @[%a@] @."
-                         Printer.pp_logic_var l_v
+              Rpp_options.Self.fatal ~source:(fst loc)
+                "Something went wrong during verification of assignes definition: \
+                 @. @[%a@] @. is not supported."
+                Printer.pp_term h
           end
         | _ -> Rpp_options.Self.fatal ~source:(fst loc)
                  "Something went wrong during verification of assignes definition: \
@@ -171,13 +184,16 @@ let check_function_side_effect funct loc =
   let rec check_pointer l =
     match l with
     | [] -> ()
-    | {term_node = TLval(TMem({term_node = TLval(TVar(_),TNoOffset); _}),TNoOffset); _} :: q ->
-      check_pointer q
-    | {term_node =
-         TLval(TMem({term_node =
-                       TBinOp(PlusPI,{term_node = TLval(TVar(_),TNoOffset); _},
-                              {term_node = Trange(_,_); _}); _}),TNoOffset); _} :: q ->
-      check_pointer q
+    | {term_node = TLval(TMem(inner),_); _} :: q ->
+      begin
+        match extract_base_lvar inner with
+        | Some _ -> check_pointer q
+        | None ->
+          Rpp_options.Self.abort ~source:(fst loc)
+            "Unsupported definition of pointer \
+             assignment in assigns clause:@. @[%a@] @."
+            Printer.pp_term (List.hd l)
+      end
     | _ ->
       Rpp_options.Self.abort ~source:(fst loc)
         "Unsupported definition of pointer \
@@ -212,10 +228,7 @@ let check_function_side_effect funct loc =
                  annotation (not varinfo)"
           end
         | TLval(TResult(_),_) -> supported_side_effect q acc acc_p
-        | TLval(TMem(_),TNoOffset) -> supported_side_effect q acc ((h.it_content)::acc_p)
-        | TLval(TMem(_),_)->
-          Rpp_options.Self.abort ~source:(fst loc)
-            "Unsupported paramter in \\assigns \\from annotation (pointer)"
+        | TLval(TMem(_),_) -> supported_side_effect q acc ((h.it_content)::acc_p)
         | _ -> Rpp_options.Self.abort ~source:(fst loc)
                   "Not supported paramter in \\assigns \\from annotation:@. @[%a@] @."
                   Printer.pp_term h.it_content
@@ -363,7 +376,7 @@ let typer func env formals =
   List.fold_left2(fun (fq,eq) fh (_,t,_)->
       match fh.term_node with
       | TLval (TVar(l_v),TNoOffset)
-      | TLval (TMem({term_node = TLval (TVar(l_v),TNoOffset); _}),TNoOffset) ->
+      | TLval (TMem({term_node = TLval (TVar(l_v),TNoOffset); _}),_) ->
         begin
           match l_v.lv_origin with
           | Some x -> (x::fq,None::eq)
@@ -903,6 +916,18 @@ let predicate_visitor
            \\at has an unsupported label %s" label
 
 
+    method  build_term_valme_at env new_t new_off ty _label =
+      let typ = match ty with
+        | Ctype t -> Ctype(get_typ_in_current_project t (env.self#behavior) (env.loc))
+        | Linteger -> Linteger
+        | Lreal -> Lreal
+        | _ ->
+          Rpp_options.Self.fatal ~source:(fst env.loc)
+            "Match bad term type in TMem at term"
+      in
+      let the_terme_node_assert = TLval(TMem(new_t),new_off) in
+      Logic_const.term ~loc:env.loc the_terme_node_assert typ
+
     method  build_Toffset_at env off _ =
       self#build_Toffset env off
 
@@ -1124,10 +1149,10 @@ let predicate_visitor
           "Something went wrong during parsing: \
            \\at has an unsupported label %s" s
 
-    method  build_term_at_mem env t s ty =
+    method  build_term_at_mem env t off s ty =
       match Str.bounded_split (Str.regexp "_") s 2 with
       | "Pre":: _ :: [] ->
-        let the_terme_node_assert = TLval(TMem(t),TNoOffset) in
+        let the_terme_node_assert = TLval(TMem(t),off) in
         let typ = match ty with
           | Ctype t -> Ctype(get_typ_in_current_project t (env.self#behavior) (env.loc))
           | Linteger -> Linteger
@@ -1146,7 +1171,7 @@ let predicate_visitor
         Logic_const.term ~loc:env.loc term_node_assert typ
 
       | "Post" :: _ :: [] ->
-        let the_terme_node_assert = TLval(TMem(t),TNoOffset) in
+        let the_terme_node_assert = TLval(TMem(t),off) in
         let typ = match ty with
           | Ctype t -> Ctype(get_typ_in_current_project t (env.self#behavior) (env.loc))
           | Linteger -> Linteger

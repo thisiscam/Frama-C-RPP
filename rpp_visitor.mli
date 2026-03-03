@@ -75,7 +75,7 @@ class virtual ['self] rpp_visitor : object('self)
     Cil_types.varinfo ->
     'e list -> Cil_types.logic_type -> 'k;
     build_term_app_result : 'b -> string -> Cil_types.logic_type -> 'k;
-    build_term_at_mem : 'b -> 'o -> string -> Cil_types.logic_type -> 'k;
+    build_term_at_mem : 'b -> 'o -> 'c -> string -> Cil_types.logic_type -> 'k;
     build_term_at_var : 'b ->
     Cil_types.logic_var ->
     'c -> string -> Cil_types.logic_type -> 'k;
@@ -107,6 +107,8 @@ class virtual ['self] rpp_visitor : object('self)
     build_term_valvar_at : 'b ->
     Cil_types.logic_var ->
     'd -> Cil_types.logic_type -> string -> 'o;
+    build_term_valme_at : 'b ->
+    'o -> 'd -> Cil_types.logic_type -> string -> 'o;
     visit_call : 'b -> Cil_types.term -> 'e;
     visit_call_app : 'b ->
     int ->
@@ -192,6 +194,7 @@ class virtual ['self] rpp_visitor : object('self)
     visit_term_at : 'b -> Cil_types.term -> string -> 'o;
     visit_term_at_mem : 'b ->
     Cil_types.term ->
+    Cil_types.term_offset ->
     string -> Cil_types.logic_type -> 'k;
     visit_term_at_val : 'b ->
     Cil_types.logic_var ->
@@ -230,6 +233,10 @@ class virtual ['self] rpp_visitor : object('self)
     Cil_types.term_offset -> Cil_types.logic_type -> 'k;
     visit_term_valvar_at : 'b ->
     Cil_types.logic_var ->
+    Cil_types.term_offset ->
+    Cil_types.logic_type -> string -> 'o;
+    visit_term_valme_at : 'b ->
+    Cil_types.term ->
     Cil_types.term_offset ->
     Cil_types.logic_type -> string -> 'o >
 
@@ -285,7 +292,7 @@ class virtual ['self] rpp_visitor : object('self)
     Cil_types.varinfo ->
     'e list -> Cil_types.logic_type -> 'k
   method virtual build_term_app_result : 'b -> string -> Cil_types.logic_type -> 'k
-  method virtual build_term_at_mem : 'b -> 'o -> string -> Cil_types.logic_type -> 'k
+  method virtual build_term_at_mem : 'b -> 'o -> 'c -> string -> Cil_types.logic_type -> 'k
   method virtual build_term_at_var : 'b ->
     Cil_types.logic_var ->
     'c -> string -> Cil_types.logic_type -> 'k
@@ -317,6 +324,8 @@ class virtual ['self] rpp_visitor : object('self)
   method virtual build_term_valvar_at : 'b ->
     Cil_types.logic_var ->
     'd -> Cil_types.logic_type -> string -> 'o
+  method virtual build_term_valme_at : 'b ->
+    'o -> 'd -> Cil_types.logic_type -> string -> 'o
   method visit_call : 'b -> Cil_types.term -> 'e
   method visit_call_app : 'b ->
     int ->
@@ -402,6 +411,7 @@ class virtual ['self] rpp_visitor : object('self)
   method visit_term_at : 'b -> Cil_types.term -> string -> 'o
   method visit_term_at_mem : 'b ->
     Cil_types.term ->
+    Cil_types.term_offset ->
     string -> Cil_types.logic_type -> 'k
   method visit_term_at_val : 'b ->
     Cil_types.logic_var ->
@@ -440,6 +450,10 @@ class virtual ['self] rpp_visitor : object('self)
     Cil_types.term_offset -> Cil_types.logic_type -> 'k
   method visit_term_valvar_at : 'b ->
     Cil_types.logic_var ->
+    Cil_types.term_offset ->
+    Cil_types.logic_type -> string -> 'o
+  method visit_term_valme_at : 'b ->
+    Cil_types.term ->
     Cil_types.term_offset ->
     Cil_types.logic_type -> string -> 'o
 
