@@ -39,6 +39,13 @@ let rec is_safe_cast from_typ to_typ =
   | TPtr _, TPtr({tnode=TVoid; _}) -> true
   | TPtr({tnode=TVoid; _}), TPtr _ -> true
   | TEnum _, TInt _ -> true   (* enum to int: always safe (C11 6.4.4.3) *)
+  | TEnum _, TFloat fk ->
+    (* Enum values fit in int (C11 6.7.2.2); safe iff int fits in float's significand. *)
+    let float_sig_bits =
+      match Cil.bitsSizeOf {tnode = TFloat fk; tattr = []} with
+      | 32 -> 24 | 64 -> 53 | 80 -> 64 | 128 -> 113 | _ -> 0
+    in
+    Cil.bitsSizeOfInt IInt <= float_sig_bits
   | TNamed ti, _ -> is_safe_cast ti.ttype to_typ
   | _, TNamed ti -> is_safe_cast from_typ ti.ttype
   | _ -> false

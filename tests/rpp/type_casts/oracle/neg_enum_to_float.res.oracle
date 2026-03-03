@@ -1,0 +1,8 @@
+[kernel] Parsing tests/rpp/type_casts/neg_enum_to_float.c (with preprocessing)
+[kernel:annot-error] tests/rpp/type_casts/neg_enum_to_float.c:16: Failure: 
+  Cast are not supported:
+   enum __anonenum_Color_1 and float are not compatible for term 
+   a in call of color_to_float 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.
