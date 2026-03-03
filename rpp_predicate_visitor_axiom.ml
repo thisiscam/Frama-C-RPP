@@ -277,19 +277,24 @@ let make_separate_term data =
   separated_term
 
 let make_labels logic_info id =
-  match logic_info.l_labels with
-  | FormalLabel("pre") :: FormalLabel("post") :: [] ->
-    let name1 = String.concat "_" ["pre";id] in
-    let name2 = String.concat "_" ["post";id] in
-    [FormalLabel(name1);FormalLabel(name2)]
-  | FormalLabel("post") :: []  ->
-    let name2 = String.concat "_" ["post";id] in
-    [FormalLabel(name2)]
-  | FormalLabel("pre") :: []  ->
-    let name1 = String.concat "_" ["pre";id] in
-    [FormalLabel(name1)]
-  | [] -> []
-  | _ -> assert false
+  let is_rpp_label = function
+    | FormalLabel("pre") | FormalLabel("post") -> true
+    | _ -> false
+  in
+  let rpp_formals = List.filter is_rpp_label logic_info.l_labels in
+  let others = List.filter (fun l -> not (is_rpp_label l)) logic_info.l_labels in
+  let renamed = match rpp_formals with
+    | FormalLabel("pre") :: FormalLabel("post") :: [] ->
+      [FormalLabel(String.concat "_" ["pre";id]);
+       FormalLabel(String.concat "_" ["post";id])]
+    | FormalLabel("post") :: [] ->
+      [FormalLabel(String.concat "_" ["post";id])]
+    | FormalLabel("pre") :: [] ->
+      [FormalLabel(String.concat "_" ["pre";id])]
+    | [] -> []
+    | _ -> assert false
+  in
+  renamed @ others
 
 let predicate_visitor predicate self_behavior =
   let v = object (self)
@@ -1014,10 +1019,13 @@ let predicate_visitor predicate self_behavior =
     method build_predicate_label env l =
       List.map
         (function
-          | FormalLabel(id) ->
+          | FormalLabel(id) when
+              (match Str.bounded_split (Str.regexp "_") id 2 with
+               | "Pre" :: _ :: [] | "Post" :: _ :: [] -> true
+               | _ -> false) ->
             FormalLabel(
               id_convert_axiom id env.loc_axiom !call_side_effect_data)
-          | _ -> assert false)
+          | label -> label)
         l
 
     method  build_predicate_app env logic_info l_axiom t_list =

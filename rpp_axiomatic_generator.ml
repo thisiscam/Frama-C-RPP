@@ -202,15 +202,23 @@ let make_result kf sub l =
   | _ , _ -> assert false
 
 let make_labels logic_information =
-  match logic_information.l_labels with
-  | FormalLabel("pre") :: FormalLabel("post") :: [] ->
-    [BuiltinLabel(Pre);BuiltinLabel(Post)]
-  | FormalLabel("post") :: []  ->
-    [BuiltinLabel(Post)]
-  | FormalLabel("pre") :: []  ->
-    [BuiltinLabel(Pre)]
-  | [] -> []
-  | _ -> assert false
+  let is_rpp_label = function
+    | FormalLabel("pre") | FormalLabel("post") -> true
+    | _ -> false
+  in
+  let rpp_formals = List.filter is_rpp_label logic_information.l_labels in
+  let others = List.filter (fun l -> not (is_rpp_label l)) logic_information.l_labels in
+  let renamed = match rpp_formals with
+    | FormalLabel("pre") :: FormalLabel("post") :: [] ->
+      [BuiltinLabel(Pre);BuiltinLabel(Post)]
+    | FormalLabel("post") :: []  ->
+      [BuiltinLabel(Post)]
+    | FormalLabel("pre") :: []  ->
+      [BuiltinLabel(Pre)]
+    | [] -> []
+    | _ -> assert false
+  in
+  renamed @ others
 
 (**
    Generation of behaviour clauses for the function involved in the relational propertie
