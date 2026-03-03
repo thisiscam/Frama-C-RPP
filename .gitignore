@@ -181,3 +181,4 @@ Makefile.plugin.generated
 /rpp-manual.pdf
 /frama-c-rpp-*
 /LICENSE
+RALPH_*.md
