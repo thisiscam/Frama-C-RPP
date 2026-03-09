@@ -321,8 +321,29 @@ class aux_visitor_3 vis_beh l_v_list ?(quan=[]) ?(pre=[]) formal_map = object(_)
         | _, _ -> Cil.ChangeTo (Pand(new_a,new_b))
       end
 
+    | Por(a,b) ->
+      let vis =
+        new aux_visitor_3 vis_beh l_v_list formal_map ~quan:!quant
+      in
+      let new_a =
+        try Visitor.visitFramacPredicate vis a with
+          Local_return -> {a with pred_content = Pfalse}
+      in
+      let new_b =
+        try Visitor.visitFramacPredicate vis b with
+          Local_return -> {a with pred_content = Pfalse}
+      in
+      begin
+        match new_a.pred_content,new_b.pred_content with
+        | Pfalse,Pfalse -> Cil.ChangeTo Pfalse
+        | _,Pfalse -> Cil.ChangeTo new_a.pred_content
+        | Pfalse,_ -> Cil.ChangeTo new_b.pred_content
+        | _, _ -> Cil.ChangeTo (Por(new_a,new_b))
+      end
+
     | Prel _ | Pseparated _ | Pvalid _
-    | Pvalid_read _ | Pvalid_function _ | Pnot _ | Pimplies _ -> DoChildren
+    | Pvalid_read _ | Pvalid_function _ | Pnot _ | Pimplies _
+    | Ptrue | Pfalse -> DoChildren
 
     | _ -> Rpp_options.Self.abort
              "Unsupported predicate in requires clause:@. @[%a@] @."

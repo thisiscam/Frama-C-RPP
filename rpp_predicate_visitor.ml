@@ -212,7 +212,8 @@ let check_function_side_effect funct loc =
     | h :: q ->
       begin
         match h.it_content.term_node with
-        | TLval(TVar(l_v),TNoOffset)| TLval(TVar(l_v),TField(_,TNoOffset))->
+        | TLval(TVar(l_v),TNoOffset)| TLval(TVar(l_v),TField(_,TNoOffset))
+        | TLval(TVar(l_v),TIndex(_,_))->
           begin
             match l_v.lv_origin with
             | Some v ->
