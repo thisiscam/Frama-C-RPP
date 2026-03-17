@@ -1,0 +1,8 @@
+[kernel] Parsing tests/rpp/type_casts/neg_long_to_short_param.c (with preprocessing)
+[kernel:annot-error] tests/rpp/type_casts/neg_long_to_short_param.c:13: Failure: 
+  Cast are not supported:
+   long and short are not compatible for term 
+   a in call of clamp_short 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

@@ -1,0 +1,8 @@
+[kernel] Parsing tests/rpp/type_casts/ptr_to_int_rejected.c (with preprocessing)
+[kernel:annot-error] tests/rpp/type_casts/ptr_to_int_rejected.c:9: Failure: 
+  Cast are not supported:
+   int * and int are not compatible for term 
+   p in call of identity 
+  . Ignoring global annotation
+[kernel] User Error: warning annot-error treated as fatal error.
+[kernel] Frama-C aborted: invalid user input.

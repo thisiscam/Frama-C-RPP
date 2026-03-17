@@ -25,6 +25,7 @@ let rec extract_base_lvar_from t =
   | TLval(TVar(lv),TNoOffset) -> Some lv
   | TLval(TMem(inner),_) -> extract_base_lvar_from inner
   | TBinOp(PlusPI,base,_) -> extract_base_lvar_from base
+  | TCast(_,_,inner) -> extract_base_lvar_from inner
   | _ -> None
 
 let check_result_from_formals kf loc af =
@@ -181,6 +182,8 @@ class virtual ['a] rpp_visitor = object (self:'a)
                         Printer.pp_term term
     | TCast (true, ((Ctype _) as ty), termi) | TCast (true, (Linteger as ty), termi)
     | TCast (true, (Lreal as ty), termi) ->
+      self#visit_call_logic_coerce env ty termi (term.term_type)
+    | TCast (false, ((Ctype _) as ty), termi) ->
       self#visit_call_logic_coerce env ty termi (term.term_type)
     | TCast (true, ty, termi) ->
       Rpp_options.Self.abort ~source:loc "Unsupported logical convertion from %a to %a:@. @[%a@] @."
@@ -352,6 +355,8 @@ class virtual ['a] rpp_visitor = object (self:'a)
                         Printer.pp_term term
     | TCast (true, ((Ctype _) as ty), termi) | TCast (true, (Linteger as ty), termi)
     | TCast (true, (Lreal as ty), termi) ->
+      self#visit_term_logic_coerce env ty termi (term.term_type)
+    | TCast (false, ((Ctype _) as ty), termi) ->
       self#visit_term_logic_coerce env ty termi (term.term_type)
     | TCast (true, ty, termi) ->
       Rpp_options.Self.abort ~source:loc "Unsupported logical convertion from %a to %a:@. @[%a@] @."

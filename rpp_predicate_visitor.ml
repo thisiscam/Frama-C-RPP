@@ -143,6 +143,7 @@ let check_function_side_effect funct loc =
     | TLval(TVar(l_v),TNoOffset) -> Some l_v
     | TLval(TMem(inner),_) -> extract_base_lvar inner
     | TBinOp(PlusPI,base,_) -> extract_base_lvar base
+    | TCast(_,_,inner) -> extract_base_lvar inner
     | _ -> None
   in
   let rec sort_pointer l acc acc_p =
@@ -380,13 +381,62 @@ let typer func env formals =
       | TLval (TMem({term_node = TLval (TVar(l_v),TNoOffset); _}),_) ->
         begin
           match l_v.lv_origin with
-          | Some x -> (x::fq,None::eq)
+          | Some x ->
+            if Cil_datatype.Typ.equal x.vtype t then
+              (x::fq,None::eq)
+            else begin
+              (* Type mismatch: create a local variable of the correct parameter
+                 type and assign the (cast) argument to it. This avoids
+                 type-unsafe substitutions when the function body is inlined. *)
+              let name =
+                String.concat "_" ["aux_cast_local";
+                                   string_of_int (Rpp_options.Counting_aux_local_variable.next())]
+              in
+              let param_type = get_typ_in_current_project t env.self#behavior env.loc in
+              let cast_var = Cil.makeLocalVar env.new_funct name param_type in
+              let x_exp = Cil.new_exp ~loc:env.loc (Lval (Cil.var x)) in
+              (cast_var :: fq, Some(x_exp, cast_var, fh) :: eq)
+            end
           | None ->
             Rpp_options.Self.fatal ~source:(fst env.loc)
               "Something went wrong: Logic variable @[%a@] \
                does not have original varinfo."
                       Printer.pp_logic_var l_v
         end
+      | TCast _ when (
+          (* Guard: cast chain must terminate at a named C variable.
+             Handles single casts, nested chains, and pointer dereferences. *)
+          let rec can_find_origin t =
+            match t.term_node with
+            | TCast(_, Ctype _, inner) -> can_find_origin inner
+            | TLval(TVar l_v, TNoOffset)
+            | TLval(TMem({term_node = TLval(TVar l_v, TNoOffset); _}), TNoOffset) ->
+              l_v.lv_origin <> None
+            | _ -> false
+          in can_find_origin fh) ->
+        (* Extract the base C expression through any chain of Ctype casts.
+           Logic_to_c.term_to_exp cannot handle these when the base variable
+           has an enum type, so we build the expression directly. *)
+        let rec find_base_exp t =
+          match t.term_node with
+          | TCast(_, Ctype _, inner) -> find_base_exp inner
+          | TLval(TVar l_v, TNoOffset) ->
+            let vi = Option.get l_v.lv_origin in
+            Cil.new_exp ~loc:env.loc (Lval (Cil.var vi))
+          | TLval(TMem({term_node = TLval(TVar l_v, TNoOffset); _}), TNoOffset) ->
+            let vi = Option.get l_v.lv_origin in
+            let ptr_exp = Cil.new_exp ~loc:env.loc (Lval (Cil.var vi)) in
+            Cil.new_exp ~loc:env.loc (Lval (Cil.mkMem ~addr:ptr_exp ~off:NoOffset))
+          | _ -> assert false (* impossible: guarded by can_find_origin *)
+        in
+        let x_exp = find_base_exp fh in
+        let name =
+          String.concat "_" ["aux_cast_local";
+                             string_of_int (Rpp_options.Counting_aux_local_variable.next())]
+        in
+        let param_type = get_typ_in_current_project t env.self#behavior env.loc in
+        let cast_var = Cil.makeLocalVar env.new_funct name param_type in
+        (cast_var :: fq, Some(x_exp, cast_var, fh) :: eq)
       | _ ->
         let name =
           String.concat "_" ["aux_local_variable";
